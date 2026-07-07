@@ -1,0 +1,63 @@
+appId: com.noshradio.app
+productName: noshRadio
+directories:
+  output: release
+asar: true
+nodeGypRebuild: false
+npmRebuild: false
+files:
+  # 核心入口
+  - main.js
+  - preload.js
+  - package.json
+  # 后端服务
+  - proxy-server.js
+  - kugou-server.js
+  - kugou-provider.js
+  - .cookie
+  # 前端运行时
+  - nosh-taste.js
+  - nosh-persist.js
+  # 前端
+  - nosh-music-ai.html
+  - fonts/**/*
+  - lib/**/*
+  # 运行时数据
+  - data/**/*
+  # 排除垃圾
+  - '!NeteaseCloudMusicApi/**'
+  - '!**/*- 副本*'
+  - '!**/副本/**'
+  - '!Kimi_Agent_*/**'
+  - '!__tests__/**'
+  - '!docs/**'
+  - '!.sisyphus/**'
+  - '!.playwright-mcp/**'
+  - '!release/**'
+  - '!*.txt'
+  - '!*.png'
+  - '!*.bat'
+  - '!radio-test.html'
+  - '!netease-dj-test.html'
+  - '!tmp.html'
+  - '!x.js'
+  - '!list.js'
+  - '!walk*.js'
+  - '!encode.js'
+  - '!do*.js'
+  - '!check_dir.py'
+  - '!walk.py'
+  - '!*.yml'
+  - '!.*'
+  - '!vite.config.js'
+  - '!.test-server.js'
+win:
+  target:
+    - nsis
+  icon: null
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: noshRadio

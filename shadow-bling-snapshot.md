@@ -1,0 +1,27 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e16] [cursor=pointer]:
+      - generic [ref=e17]: "ON"
+      - generic [ref=e18]: "OFF"
+    - generic [ref=e19] [cursor=pointer]:
+      - img "logo"
+    - generic [ref=e20]:
+      - generic [ref=e21] [cursor=pointer]:
+        - generic [ref=e22]:
+          - generic [ref=e23]: Light
+          - generic [ref=e24]: Dark
+        - img [ref=e25]
+      - img [ref=e30] [cursor=pointer]
+  - paragraph [ref=e726]: SCROLL
+  - generic [ref=e731]:
+    - img [ref=e733]
+    - generic [ref=e753]:
+      - generic [ref=e754]:
+        - img [ref=e756]
+        - paragraph [ref=e758]: FocusMode
+      - generic [ref=e760] [cursor=pointer]:
+        - img [ref=e762]
+        - paragraph [ref=e764]: ViewMode
+      - generic [ref=e766] [cursor=pointer]:
+        - img [ref=e768]
+        - paragraph [ref=e770]: GameMode

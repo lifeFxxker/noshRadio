@@ -1,0 +1,69 @@
+{
+  "name": "noshradio",
+  "version": "1.0.0",
+  "description": "noshRadio — 多音源聚合桌面音乐播放器",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder --win",
+    "test": "node --test __tests__/",
+    "icon": "node build/generate-ico.js"
+  },
+  "build": {
+    "appId": "com.noshradio.app",
+    "productName": "noshRadio",
+    "asar": false,
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "electronDist": ".electron-dist",
+    "files": [
+      "!plugins/**/*",
+      "!.electron-dist/**/*",
+      "!**/nosh-music-ai - 副本*",
+      "!**/nosh-music-ai (1)*",
+      "!build/generate-ico.js",
+      "!build/icon.png",
+      "!build/icon.ico"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "noshRadio",
+      "include": "build/installer.nsh"
+    }
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "gsap": "^3.15.0",
+    "migu-music-api": "^1.0.1",
+    "NeteaseCloudMusicApi": "4.32.0",
+    "protobufjs": "^8.6.5",
+    "roughjs": "^4.6.6",
+    "wired-elements": "^2.1.2",
+    "wired-fab": "^2.1.0"
+  },
+  "devDependencies": {
+    "electron": "^42.5.0",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.0",
+    "javascript-obfuscator": "^5.4.3",
+    "jimp": "^1.6.1",
+    "pino": "^10.3.1",
+    "png-to-ico": "^3.0.2",
+    "vite": "^8.0.11",
+    "webpack": "^5.108.4",
+    "webpack-cli": "^7.2.1",
+    "webpack-obfuscator": "^3.6.1"
+  }
+}

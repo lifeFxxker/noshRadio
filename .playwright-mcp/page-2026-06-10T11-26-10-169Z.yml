@@ -1,0 +1,247 @@
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - banner:
+      - link "Shopify Design home" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "Shopify Design"
+      - link "Design Apprentice Program — learn more" [ref=e7] [cursor=pointer]:
+        - /url: https://shopify.design/dap
+        - generic [ref=e11]: Design Apprentice Program · Design Apprentice Program ·
+    - main [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - heading "Make the new normal" [level=1] [ref=e17]:
+            - generic [ref=e19]: Make
+            - generic [ref=e21]: the
+          - generic [ref=e22]:
+            - generic [ref=e24]: new
+            - generic [ref=e26]: normal
+          - paragraph [ref=e27]: How we work is changing shape. So is what’s possible.
+        - generic [ref=e28]:
+          - generic [ref=e31]: LIVE
+          - link "FROM ARTIFACT" [active] [ref=e33] [cursor=pointer]:
+            - /url: /#building-artifact
+            - generic [ref=e34]: FROM ARTIFACT
+            - img [ref=e35]
+        - generic [ref=e38]:
+          - generic [ref=e39]:
+            - button "Basket" [ref=e41] [cursor=pointer]
+            - button "Shop Week" [ref=e320] [cursor=pointer]
+            - button "Renaissance" [ref=e47] [cursor=pointer]
+            - button "Sidekick" [ref=e323] [cursor=pointer]
+            - button "Shopify Racing" [ref=e50] [cursor=pointer]
+            - button "Artifact Identity" [ref=e53] [cursor=pointer]
+            - button "Send Money" [ref=e326] [cursor=pointer]
+            - button "Card Sorting" [ref=e329] [cursor=pointer]
+            - button "Text Strings" [ref=e332] [cursor=pointer]
+            - button "Agentic Search" [ref=e59] [cursor=pointer]
+            - button "Shop Web" [ref=e335] [cursor=pointer]
+            - button "Shopify Design Logo Animation" [ref=e62] [cursor=pointer]
+          - generic [ref=e64]:
+            - button "Markets Graph" [ref=e66] [cursor=pointer]
+            - button "Start Page Hero" [ref=e338] [cursor=pointer]
+            - button "Onboarding Graphic" [ref=e341] [cursor=pointer]
+            - button "Tinker" [ref=e344] [cursor=pointer]
+            - button "Immersive Search" [ref=e347] [cursor=pointer]
+            - button "Tinker" [ref=e75] [cursor=pointer]
+            - button "Shop App Card Stacks" [ref=e350] [cursor=pointer]
+            - button "Visual Search" [ref=e353] [cursor=pointer]
+            - button "OpenAI Integration" [ref=e356] [cursor=pointer]
+            - button "Carousel" [ref=e84] [cursor=pointer]
+            - button "Type Pill" [ref=e359] [cursor=pointer]
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - img
+                - generic:
+                  - generic:
+                    - img
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - img
+            - generic:
+              - generic:
+                - generic:
+                  - heading "Make commerce better for everyone." [level=2]
+                - generic:
+                  - paragraph: Every 26 seconds, a merchant makes their first sale on Shopify. That kind of scale changes the job and how we approach design.
+                  - button "Our design philosophy" [ref=e111] [cursor=pointer]:
+                    - generic [ref=e114]: Our design philosophy
+      - generic [ref=e116]:
+        - generic [ref=e117]:
+          - heading "Design in public" [level=2] [ref=e118]:
+            - generic [ref=e120]: Design
+          - generic [ref=e121]:
+            - generic [ref=e123]: in
+            - generic [ref=e125]: public
+          - paragraph [ref=e126]: Ideas and conversations shaping how we design at Shopify.
+        - generic [ref=e127]:
+          - button "Open NYC Housewarming + Demo Night" [ref=e128] [cursor=pointer]:
+            - generic [ref=e132]:
+              - generic [ref=e133]: NYC Housewarming + Demo Night
+              - generic [ref=e134]: JUN 2026
+          - button "Open Dive Club" [ref=e135] [cursor=pointer]:
+            - generic [ref=e137]:
+              - generic: Dive Club
+              - generic [ref=e139]:
+                - generic:
+                  - img
+                  - text: Play
+              - generic [ref=e141]:
+                - generic [ref=e142]: Dive Club
+                - generic [ref=e143]: Katarina Batina
+          - button "Open We won a Webby!" [ref=e144] [cursor=pointer]:
+            - generic [ref=e146]:
+              - generic [ref=e148]:
+                - generic:
+                  - img
+                  - text: Play
+              - generic [ref=e150]:
+                - generic [ref=e151]: We won a Webby!
+                - generic [ref=e152]: "2026"
+          - button "Open DESIGN.MD REEL" [ref=e153] [cursor=pointer]:
+            - generic [ref=e155]:
+              - generic [ref=e157]:
+                - generic:
+                  - img
+                  - text: Play
+              - generic [ref=e159]:
+                - generic [ref=e160]: DESIGN.MD REEL
+                - generic [ref=e161]: APR 2026
+          - button "Open Demo Night" [ref=e162] [cursor=pointer]:
+            - generic [ref=e166]:
+              - generic [ref=e167]: Demo Night
+              - generic [ref=e168]: APR 2026
+          - button "Open design.md" [ref=e169] [cursor=pointer]:
+            - generic [ref=e173]:
+              - generic [ref=e174]: design.md
+              - generic [ref=e175]: APR 2026
+          - button "Open Product Design Studio" [ref=e176] [cursor=pointer]:
+            - generic [ref=e178]:
+              - heading "Building Artifact" [level=3] [ref=e179]
+              - generic [ref=e180]:
+                - generic [ref=e181]: Product Design Studio
+                - generic [ref=e182]: April 2026
+          - button "Open Sneak Peek" [ref=e183] [cursor=pointer]:
+            - generic [ref=e185]:
+              - generic: Sneak Peek
+              - generic [ref=e187]:
+                - generic:
+                  - img
+                  - text: Play
+              - generic [ref=e189]:
+                - generic [ref=e190]: Sneak Peek
+                - generic [ref=e191]: Kazden Cattapan
+          - button "Open Demo Night" [ref=e192] [cursor=pointer]:
+            - generic [ref=e196]:
+              - generic [ref=e197]: Demo Night
+              - generic [ref=e198]: Nov 2025
+          - button "Open Dive Club" [ref=e199] [cursor=pointer]:
+            - generic [ref=e201]:
+              - generic: Dive Club
+              - generic [ref=e203]:
+                - generic:
+                  - img
+                  - text: Play
+              - generic [ref=e205]:
+                - generic [ref=e206]: Dive Club
+                - generic [ref=e207]: Marvin Schwaibold
+          - button "Open Context" [ref=e208] [cursor=pointer]:
+            - generic [ref=e210]:
+              - generic: Context
+              - generic [ref=e212]:
+                - generic:
+                  - img
+                  - text: Play
+              - generic [ref=e214]:
+                - generic [ref=e215]: Context
+                - generic [ref=e216]: Carl Rivera
+          - button "Open Carl Rivera" [ref=e217] [cursor=pointer]:
+            - generic [ref=e219]:
+              - heading "Deciding to move faster" [level=3] [ref=e220]
+              - generic [ref=e221]:
+                - generic [ref=e222]: Carl Rivera
+                - generic [ref=e223]: Nov 2025
+          - button "Open Double Diamond" [ref=e224] [cursor=pointer]:
+            - generic [ref=e226]:
+              - generic: Diamond
+              - generic [ref=e228]:
+                - generic:
+                  - img
+                  - text: Play
+              - generic [ref=e230]:
+                - generic [ref=e231]: Double Diamond
+                - generic [ref=e232]: Carl Rivera
+          - button "Open Kinference and Friends" [ref=e233] [cursor=pointer]:
+            - generic [ref=e237]:
+              - generic [ref=e238]: Kinference and Friends
+              - generic [ref=e239]: Dinner
+          - button "Open Kinference" [ref=e240] [cursor=pointer]:
+            - generic [ref=e242]:
+              - generic: Kinference
+              - generic [ref=e244]:
+                - generic:
+                  - img
+                  - text: Play
+              - generic [ref=e246]:
+                - generic [ref=e247]: Kinference
+                - generic [ref=e248]: Carl Rivera
+          - button "Open Product Design Studio" [ref=e249] [cursor=pointer]:
+            - generic [ref=e253]:
+              - generic [ref=e254]: Product Design Studio
+              - generic [ref=e255]: EOY Gathering
+      - generic [ref=e257]:
+        - heading "Remote by design." [level=2] [ref=e259]:
+          - generic [ref=e261]: Remote
+        - generic [ref=e262]:
+          - generic [ref=e265]: by
+          - generic [ref=e268]: design.
+        - group "Together in" [ref=e269]:
+          - generic [ref=e272]: Together
+          - generic [ref=e275]: in
+        - group "Toronto, Ontario, Canada" [ref=e276]:
+          - generic [ref=e279]: Toronto
+        - group "Ottawa, Ontario, Canada" [ref=e281]:
+          - generic [ref=e285]: Ottawa
+        - group "New York, New York, USA" [ref=e286]:
+          - generic [ref=e289]: New
+          - button "View the studio" [ref=e290] [cursor=pointer]:
+            - img "Shopify Design studio" [ref=e291]
+          - generic [ref=e294]: York
+        - group "Montreal, Quebec, Canada" [ref=e296]:
+          - generic [ref=e300]: Montreal
+        - group "Seattle, Washington, USA" [ref=e301]:
+          - generic [ref=e304]: Seattle
+      - generic [ref=e306]:
+        - generic [ref=e307]:
+          - generic [ref=e308]: Shopify Design
+          - generic [ref=e309]: "2026"
+        - separator [ref=e310]
+        - generic [ref=e311]:
+          - heading "Help shape what comes next" [level=2] [ref=e312]
+          - link "Join Shopify Open Roles" [ref=e313] [cursor=pointer]:
+            - /url: https://www.shopify.com/careers/disciplines/design?utm_source=s.d
+            - generic [ref=e316]:
+              - generic [ref=e317]: Join Shopify
+              - generic [ref=e318]: Open Roles
+  - dialog "Building Artifact" [ref=e361]:
+    - generic [ref=e362]:
+      - generic [ref=e364]:
+        - generic [ref=e365]: Product Design Studio
+        - generic [ref=e366]: April 2026
+      - generic [ref=e367]:
+        - heading "Building Artifact" [level=2] [ref=e368]
+        - paragraph [ref=e369]: "Hours before a review, we had the work spread across four different formats: an After Effects MP4, a Figma file, an Origami prototype, and a Quick-hosted website, but no cohesive way to present it all together. So we did what felt natural at Shopify: we hacked something. A blank HTML page, a horizontal carousel with overflow scroll, an iframe, an embedded video. It took less than an hour. We used it to give the presentation that afternoon, scrolling left to right through each piece as we talked through the narrative. It worked."
+        - paragraph [ref=e370]: That kind of improvisation is common here. Shopify has long been a company of tinkerers — people who default to building over buying, who reach for code before they reach for a vendor. AI has only accelerated this. Across the organization, designers, engineers, PMs, and even non-technical teams are now building tools, prototypes, and internal utilities that would have taken weeks a few years ago. When there’s a gap in the workflow, the default response is no longer “find a SaaS tool.” It’s “build something.”
+        - paragraph [ref=e371]: "But this bias toward making has a downside: every project generates a trail of outputs — static images, motion files, coded prototypes hosted on Quick, Figma explorations, pieces of writing — scattered across formats and platforms with no real way to connect them. Good work gets lost. Concepts that did not survive a review disappear into folders. Prototypes that inspired a team internally never reach the broader organization. The issue was never making things. It was finding it later, and understanding where it came from."
+        - paragraph [ref=e372]: "We built Artifact to solve this, and we built it entirely in code. The first prototype was that crude carousel, and from there we extended outward: a slider to control how many columns were visible at once, support for additional media types, grouping, pages. Only after the full interaction model was working did we open Figma and spend a day or two designing components for patterns we had already proven in the product itself. The tool informed the design, not the other way around."
+        - paragraph [ref=e373]: The pivot came during a project review. As we were walking through the work, one of the directors stopped us and asked, “What are you using to present this?”. The whole conversation shifted. She saw something we had been too close to notice — the container was as valuable as the content. She wanted it rolled out across the organization.
+        - paragraph [ref=e374]: "Shopify already had Studio, an internal Dribbble-like tool for the design org. But it lacked a real feedback loop: uploads were sporadic, engagement was low, and little happened after something was posted. We merged Studio into Artifact, creating two sides: a feed for publishing and discovery, and a project view for organizing work into collections and pages. That made unfinished, unshipped, or previously abandoned work useful again, letting one team’s artifacts become another team’s reference point."
+        - paragraph [ref=e375]: Adoption has been strong. We connected a Slack feedback channel to an internal agent that turns feature requests and bug reports into pull requests against the Artifact repo, so the broader design org can now contribute to the tool directly. What started as a hack built in under an hour before a presentation is now shared infrastructure — a place where work accumulates rather than evaporates.
+        - paragraph [ref=e376]: The lesson we keep returning to is bigger than Artifact. The best internal tools do not begin with a roadmap; they begin with an immediate problem, solved out of necessity.
+    - button "Close" [ref=e377] [cursor=pointer]:
+      - img [ref=e378]

@@ -1,0 +1,8 @@
+{
+  "name": "source-bridge",
+  "version": "1.0.0",
+  "title": "多音源解析",
+  "description": "网易云灰色歌曲自动从酷狗/酷我/酷狗/酷我等音源获取可播放URL",
+  "entry": "bridge.js",
+  "npmDependencies": []
+}
