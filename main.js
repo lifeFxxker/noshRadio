@@ -9,6 +9,7 @@ const { spawn, execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const updater = require('./updater');
 
 // ─── 路径 ────────────────────────────────────────────────────
 const APP_ROOT = __dirname;
@@ -307,6 +308,62 @@ function setupIPC() {
   ipcMain.handle('window-is-maximized', () => {
     return mainWindow?.isMaximized() ?? false;
   });
+
+  // ─── 自动升级 ──────────────────────────────────────────────
+  const appVersion = app.getVersion();
+
+  // 检查更新
+  ipcMain.handle('update:check', async () => {
+    writeLog('main', '[UPDATE] Checking for updates...');
+    const info = await updater.checkForUpdate(appVersion);
+    if (info) {
+      writeLog('main', `[UPDATE] Found: v${info.version}`);
+    } else {
+      writeLog('main', '[UPDATE] No update available');
+    }
+    return info; // 返回给渲染进程
+  });
+
+  // 下载更新（带进度推送）
+  let downloadAbort = false;
+
+  ipcMain.handle('update:download', async () => {
+    downloadAbort = false;
+    const info = await updater.checkForUpdate(appVersion);
+    if (!info) return { error: 'no update' };
+
+    writeLog('main', `[UPDATE] Downloading ${info.assetName}...`);
+    try {
+      const destPath = await updater.downloadUpdate(info, (progress) => {
+        mainWindow?.webContents.send('update:download-progress', progress);
+      });
+      writeLog('main', `[UPDATE] Downloaded to ${destPath}`);
+      return { success: true, path: destPath };
+    } catch (e) {
+      writeLog('main', `[UPDATE] Download failed: ${e.message}`);
+      return { error: e.message };
+    }
+  });
+
+  // 执行安装
+  ipcMain.handle('update:install', async () => {
+    const tmpDir = process.env.TEMP || '.';
+    // 找最新下载的文件
+    const files = fs.readdirSync(tmpDir).filter(f => f.startsWith('noshRadio-update-'));
+    if (!files.length) return { error: 'no downloaded installer found' };
+    const latest = files.sort().reverse()[0];
+    const exePath = path.join(tmpDir, latest);
+
+    writeLog('main', `[UPDATE] Installing ${exePath}`);
+    try {
+      updater.installUpdate(exePath);
+      // 延迟退出，让安装器有机会启动
+      setTimeout(() => app.quit(), 1000);
+      return { success: true };
+    } catch (e) {
+      return { error: e.message };
+    }
+  });
 }
 
 // ─── Electron ────────────────────────────────────────────────
@@ -380,6 +437,18 @@ async function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  // 6. 后台静默检查更新（不阻塞启动）
+  setTimeout(() => {
+    updater.checkForUpdate(app.getVersion()).then((info) => {
+      if (info && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update:available', info);
+        writeLog('main', `[UPDATE] Notified renderer: v${info.version}`);
+      }
+    }).catch(() => {
+      // 静默失败，不影响用户
+    });
+  }, 5000); // 启动 5 秒后再检查，避免影响首屏加载
 }
 
 // ─── 安全策略 ─────────────────────────────────────────────────

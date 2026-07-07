@@ -3763,9 +3763,77 @@ wired-fab .fill-accent path {
   .search-wrapper { max-width: 100%; margin: 0 4px; }
   .search-results { width: calc(100vw - 16px); }
 }
+
+/* ─── 自动升级通知卡片 ───────────────────────── */
+#update-notif {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 320px;
+  background: var(--surface);
+  border: 1.5px solid var(--fg);
+  border-radius: 6px;
+  padding: 14px 16px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg);
+  z-index: 5000;
+  box-shadow: 4px 4px 0 var(--shadow);
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  transition: opacity 0.3s, transform 0.3s;
+  line-height: 1.4;
+}
+#update-notif.show { display: flex; }
+#update-notif .un-title  { font-weight: bold; font-size: 13px; }
+#update-notif .un-body   { font-size: 11px; opacity: 0.8; }
+#update-notif .un-actions { display: flex; gap: 8px; margin-top: 4px; }
+#update-notif .un-actions button {
+  background: var(--surface);
+  border: 1px solid var(--fg);
+  border-radius: 3px;
+  padding: 4px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+#update-notif .un-actions button:hover { background: var(--fg); color: var(--surface); }
+#update-notif .un-progress {
+  width: 100%;
+  height: 6px;
+  background: var(--fg);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+#update-notif .un-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--fg);
+  transition: width 0.2s;
+}
+#update-notif .un-progress-text { font-size: 10px; opacity: 0.6; }
 </style>
 </head>
 <body>
+
+<!-- 自动升级通知卡片（由 JS 控制显隐） -->
+<div id="update-notif">
+  <div class="un-title">🔄 新版本可用</div>
+  <div class="un-body" id="un-body">发现新版本，是否下载更新？</div>
+  <div class="un-progress" id="un-progress-wrap" style="display:none">
+    <div class="un-progress-bar" id="un-progress-bar"></div>
+  </div>
+  <div class="un-progress-text" id="un-progress-text"></div>
+  <div class="un-actions" id="un-actions">
+    <button id="un-btn-skip">忽略</button>
+    <button id="un-btn-dl">下载更新</button>
+    <button id="un-btn-install" style="display:none">立即安装</button>
+  </div>
+</div>
 
 <!-- SVG filter for hand-drawn rough effect (Wired Elements style) -->
 <svg style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
@@ -15098,6 +15166,88 @@ audio.addEventListener('seeked', () => {
   // 重新开始 drip
   startDmDrip();
 });
+
+// ===== 自动升级 UI =====
+(function() {
+  const update = window.noshElectron?.update;
+  if (!update) return; // 非 Electron 环境跳过
+
+  const el = document.getElementById('update-notif');
+  const body = document.getElementById('un-body');
+  const title = el?.querySelector('.un-title');
+  const actions = document.getElementById('un-actions');
+  const skipBtn = document.getElementById('un-btn-skip');
+  const dlBtn = document.getElementById('un-btn-dl');
+  const installBtn = document.getElementById('un-btn-install');
+  const progressWrap = document.getElementById('un-progress-wrap');
+  const progressBar = document.getElementById('un-progress-bar');
+  const progressText = document.getElementById('un-progress-text');
+
+  let updateInfo = null;
+
+  function show(msg, btns) {
+    if (!el) return;
+    body.textContent = msg;
+    actions.replaceChildren(...btns);
+    el.classList.add('show');
+  }
+  function hide() { el?.classList.remove('show'); }
+
+  // 收到后台静默检查结果
+  update.onAvailable((info) => {
+    updateInfo = info;
+    show(
+      `版本 ${info.version} 已发布，是否下载更新？（${(info.assetSize / 1048576).toFixed(1)} MB）`,
+      [skipBtn, dlBtn]
+    );
+  });
+
+  // 忽略
+  skipBtn?.addEventListener('click', hide);
+
+  // 下载
+  dlBtn?.addEventListener('click', async () => {
+    dlBtn.disabled = true;
+    dlBtn.textContent = '下载中…';
+    progressWrap.style.display = 'block';
+    progressText.textContent = '0%';
+
+    // 注册进度
+    const unsub = update.onProgress((p) => {
+      progressBar.style.width = p.percent + '%';
+      progressText.textContent = `${p.percent}% (${(p.bytes / 1048576).toFixed(1)} MB / ${(p.total / 1048576).toFixed(1)} MB)`;
+    });
+
+    const result = await update.download();
+    unsub();
+
+    if (result.error) {
+      body.textContent = `下载失败：${result.error}`;
+      dlBtn.disabled = false;
+      dlBtn.textContent = '重试';
+      return;
+    }
+
+    progressBar.style.width = '100%';
+    progressText.textContent = '下载完成 ✓';
+    dlBtn.style.display = 'none';
+    installBtn.style.display = '';
+    show('更新已下载完成，是否立即安装并重启？', [skipBtn, installBtn]);
+  });
+
+  // 安装
+  installBtn?.addEventListener('click', async () => {
+    installBtn.disabled = true;
+    installBtn.textContent = '安装中…';
+    const result = await update.install();
+    if (result.error) {
+      body.textContent = `安装失败：${result.error}`;
+      installBtn.disabled = false;
+      installBtn.textContent = '重试';
+    }
+    // 成功则 app 会在 1s 后退出
+  });
+})();
 </script>
 </body>
 </html>

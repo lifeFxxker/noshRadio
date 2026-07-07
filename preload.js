@@ -34,4 +34,31 @@ contextBridge.exposeInMainWorld('noshElectron', {
     remove: (name) => ipcRenderer.invoke('plugin:remove', name),
     list: () => ipcRenderer.invoke('plugin:list'),
   },
+
+  // 自动升级
+  update: {
+    check: () => ipcRenderer.invoke('update:check'),
+    download: () => ipcRenderer.invoke('update:download'),
+    install: () => ipcRenderer.invoke('update:install'),
+    /**
+     * 监听下载进度
+     * @param {(progress: { percent: number, bytes: number, total: number }) => void} cb
+     * @returns {() => void} 取消监听的函数
+     */
+    onProgress: (cb) => {
+      const handler = (_, data) => cb(data);
+      ipcRenderer.on('update:download-progress', handler);
+      return () => ipcRenderer.removeListener('update:download-progress', handler);
+    },
+    /**
+     * 监听新版本通知（后台静默检查到的）
+     * @param {(info: import('electron').IpcRendererEvent) => void} cb
+     * @returns {() => void} 取消监听的函数
+     */
+    onAvailable: (cb) => {
+      const handler = (_, info) => cb(info);
+      ipcRenderer.on('update:available', handler);
+      return () => ipcRenderer.removeListener('update:available', handler);
+    },
+  },
 });

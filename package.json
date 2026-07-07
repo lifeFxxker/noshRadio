@@ -53,6 +53,10 @@
     "wired-elements": "^2.1.2",
     "wired-fab": "^2.1.0"
   },
+  "update": {
+    "giteeOwner": "yangshengzhe",
+    "giteeRepo": "nosh-radio"
+  },
   "devDependencies": {
     "electron": "^42.5.0",
     "electron-builder": "^26.15.3",
