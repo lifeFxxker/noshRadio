@@ -2617,15 +2617,12 @@ body.desktop-lyrics #desktopLyrics {
   top: 3px;
   bottom: 3px;
   left: 0;
-  width: 50%;
+  width: 33.33%;
   background: rgba(255,255,255,0.10);
   border-radius: 100px;
   transition: left 0.45s cubic-bezier(0.34,1.4,0.64,1), 
               background 0.45s ease;
   pointer-events: none;
-}
-.capsule-slider.fav {
-  background: rgba(255,80,120,0.18);
 }
 .capsule-option {
   position: relative;
@@ -2971,32 +2968,56 @@ body.desktop-lyrics #desktopLyrics {
 }
 .pl-item-remove:hover { opacity: 1; color: #c0392b; }
 
-/* 已导入歌单列表 */
+/* 已导入歌单列表 - v2 */
 .sprite-saved-playlists { margin-bottom: 12px; }
-.saved-pl-section-title { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between; }
-.saved-pl-grid { display: flex; flex-direction: column; gap: 4px; }
-.saved-pl-card {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.12s;
+.saved-pl-section-title { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+.saved-pl-search {
+  font-family: var(--font-mono); font-size: 10px; padding: 3px 6px;
+  border: 1px solid var(--border); border-radius: 3px;
+  background: var(--surface); color: var(--fg);
+  width: 120px; outline: none; flex-shrink: 0;
+}
+.saved-pl-search:focus { border-color: var(--accent); }
+.saved-pl-list { display: flex; flex-direction: column; gap: 2px; }
+.saved-pl-list::-webkit-scrollbar { width: 4px; }
+.saved-pl-list::-webkit-scrollbar-track { background: transparent; }
+.saved-pl-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.saved-pl-item { border: 1px solid var(--border); border-radius: 4px; }
+.saved-pl-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 8px; cursor: pointer;
+  transition: background 0.1s;
   background: var(--surface);
-  min-height: 36px;
+  min-height: 30px;
 }
-.saved-pl-card:hover { border-color: var(--accent); background: var(--surface-2); }
-.saved-pl-cover {
-  width: 28px; height: 28px; border-radius: 2px; object-fit: cover; flex-shrink: 0;
-  background: var(--surface-2);
-}
-.saved-pl-info { flex: 1; min-width: 0; }
-.saved-pl-name { font-family: var(--font-mono); font-size: 11px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.saved-pl-meta { font-size: 10px; color: var(--muted); }
-.saved-pl-load-btn { font-size: 10px; color: var(--accent); cursor: pointer; padding: 2px 6px; border: 1px solid var(--accent); border-radius: 3px; background: transparent; font-family: var(--font-mono); flex-shrink: 0; }
-.saved-pl-load-btn:hover { background: var(--accent); color: var(--surface); }
-.saved-pl-del { font-size: 12px; cursor: pointer; opacity: 0.35; padding: 2px; flex-shrink: 0; color: var(--muted); }
+.saved-pl-header:hover { background: var(--surface-2); }
+.saved-pl-name { font-family: var(--font-mono); font-size: 11px; color: var(--fg); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saved-pl-meta { font-size: 10px; color: var(--muted); white-space: nowrap; }
+.saved-pl-play-all { font-size: 11px; cursor: pointer; padding: 1px 5px; border: 1px solid var(--accent); border-radius: 3px; background: transparent; color: var(--accent); font-family: var(--font-mono); flex-shrink: 0; line-height: 1.4; }
+.saved-pl-play-all:hover { background: var(--accent); color: var(--surface); }
+.saved-pl-del { font-size: 12px; cursor: pointer; opacity: 0.35; padding: 1px 2px; flex-shrink: 0; color: var(--muted); }
 .saved-pl-del:hover { opacity: 1; color: #c0392b; }
+
+/* 已导入歌单内的歌曲行 */
+.saved-pl-songs { background: var(--surface-2); border-top: 1px solid var(--border); max-height: 300px; overflow-y: auto; }
+.saved-pl-songs::-webkit-scrollbar { width: 4px; }
+.saved-pl-songs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.saved-pl-song {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px 4px 16px; cursor: pointer;
+  transition: background 0.1s;
+}
+.saved-pl-song:hover { background: var(--surface); }
+.saved-pl-song-thumb { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.5; }
+.saved-pl-song-thumb svg { fill: var(--muted); }
+.saved-pl-song-info { flex: 1; min-width: 0; }
+.saved-pl-song-name { font-family: var(--font-mono); font-size: 10px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saved-pl-song-artist { font-size: 9px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saved-pl-song-fav { font-size: 11px; cursor: pointer; opacity: 0.35; flex-shrink: 0; color: var(--muted); }
+.saved-pl-song-fav:hover { opacity: 1; color: var(--accent); }
+.saved-pl-song-fav.favorited { opacity: 1; color: var(--accent); }
+
 .saved-pl-divider { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
 
 .sprite-messages {
@@ -4620,6 +4641,7 @@ wired-fab .fill-accent path {
     <div class="capsule-slider" id="capsuleSlider"></div>
     <span class="capsule-option active" data-mode="all">📋 历史</span>
     <span class="capsule-option" data-mode="favorites">❤️ 喜欢</span>
+    <span class="capsule-option" data-mode="imported">📦 导入</span>
   </div>
   <div class="album-drift-subtitle" id="albumDriftSubtitle">在蓝雾中漂流</div>
 </div>
@@ -5892,6 +5914,8 @@ async function importSelectedPlaylists() {
           album: song.al?.name || song.album?.name || '',
           picUrl: song.al?.picUrl || song.album?.artist?.img1v1Url || song.picUrl || '',
           duration: song.dt || song.duration || 0,
+          source: 'netease',
+          platform: 'netease',
         };
       });
 
@@ -5938,6 +5962,53 @@ async function importSelectedPlaylists() {
     for (const pldata of savedPlaylistData) {
       addSavedPlaylist(pldata);
     }
+
+    // 后台预取音频 URL：收集所有歌曲 ID，批量请求（不阻塞导入流程）
+    (async function prefetchUrls() {
+      try {
+        const allIds = [...new Set(savedPlaylistData.flatMap(pl => pl.songs.map(s => s.id)).filter(Boolean))];
+        if (allIds.length === 0) return;
+        // 分批请求，每批最多 100 个 ID
+        const batchSize = 100;
+        const urlMap = new Map(); // id → url
+        for (let i = 0; i < allIds.length; i += batchSize) {
+          const batch = allIds.slice(i, i + batchSize);
+          try {
+            const res = await fetch(neteaseApiUrl(`${NETEASE_API_BASE}/song/url?id=${batch.join(',')}`));
+            const data = await res.json();
+            if (data.code === 200 && data.data) {
+              for (const item of data.data) {
+                if (item && item.id && item.url) {
+                  urlMap.set(item.id, { url: item.url, pic: item.picUrl || '' });
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('[prefetch] 批次 URL 获取失败:', e.message);
+          }
+        }
+        if (urlMap.size === 0) return;
+        // 回写已导入歌单
+        const saved = getSavedPlaylists();
+        let updated = false;
+        for (const pl of saved) {
+          for (const song of pl.songs) {
+            const found = urlMap.get(song.id);
+            if (found && !song.url) {
+              song.url = found.url;
+              if (found.pic) song.picUrl = song.picUrl || found.pic;
+              updated = true;
+            }
+          }
+        }
+        if (updated) {
+          saveSavedPlaylists(saved);
+          console.log(`[prefetch] 成功预取 ${urlMap.size}/${allIds.length} 个音频 URL`);
+        }
+      } catch (e) {
+        console.warn('[prefetch] 预取失败（不影响导入）:', e.message);
+      }
+    })();
 
     // === 写入品味数据 ===
     // 1. 按出现频次排序的歌手列表
@@ -7591,23 +7662,71 @@ function renderSavedPlaylists() {
   // 返回 HTML 片段，空时返回空串
   if (!saved || saved.length === 0) return '';
   let html = '<div class="sprite-saved-playlists">';
-  html += '<div class="saved-pl-section-title">📚 已导入歌单 <span style="font-weight:normal;font-size:10px;color:var(--muted)">(' + saved.length + ')</span></div>';
-  html += '<div class="saved-pl-grid">';
-  for (const pl of saved) {
-    const cover = pl.cover || '';
-    const coverStyle = cover ? `background-image:url(${JSON.stringify(cover)});background-size:cover;` : '';
-    html += `<div class="saved-pl-card" data-pl-id="${pl.id}" data-pl-source="${pl.source}">
-      <div class="saved-pl-cover" style="${coverStyle}"></div>
-      <div class="saved-pl-info">
-        <div class="saved-pl-name">${escapeHtml(pl.name)}</div>
-        <div class="saved-pl-meta">${pl.songs ? pl.songs.length : pl.trackCount || 0} 首</div>
-      </div>
-      <button class="saved-pl-load-btn" data-pl-id="${pl.id}" data-pl-source="${pl.source}">▶ 播放</button>
-      <span class="saved-pl-del" data-pl-id="${pl.id}" data-pl-source="${pl.source}" title="删除">✕</span>
-    </div>`;
+  html += '<div class="saved-pl-section-title">';
+  html += '<span>📚 已导入歌单 (' + saved.length + ')</span>';
+  html += '<input class="saved-pl-search" id="savedPlSearch" placeholder="搜索歌单..." oninput="filterSavedPlaylists(this.value)" />';
+  html += '</div>';
+  html += '<div class="saved-pl-list" id="savedPlList">';
+  for (let i = 0; i < saved.length; i++) {
+    const pl = saved[i];
+    html += renderSavedPlaylistItem(pl, i);
   }
   html += '</div></div>';
   return html;
+}
+
+function renderSavedPlaylistItem(pl, index) {
+  const songCount = pl.songs ? pl.songs.length : pl.trackCount || 0;
+  return `<div class="saved-pl-item" data-pl-id="${pl.id}" data-pl-source="${pl.source}" data-pl-index="${index}">
+    <div class="saved-pl-header">
+      <span class="saved-pl-name">${escapeHtml(pl.name)}</span>
+      <span class="saved-pl-meta">${songCount} 首</span>
+      <button class="saved-pl-play-all" data-pl-id="${pl.id}" data-pl-source="${pl.source}" title="播放全部">▶</button>
+      <span class="saved-pl-del" data-pl-id="${pl.id}" data-pl-source="${pl.source}" title="删除">✕</span>
+    </div>
+    <div class="saved-pl-songs" id="savedPlSongs_${CSS.escape(String(pl.id).replace(/[^a-zA-Z0-9_-]/g,'_'))}" style="display:none;"></div>
+  </div>`;
+}
+
+function filterSavedPlaylists(query) {
+  const items = document.querySelectorAll('#savedPlList .saved-pl-item');
+  const q = query.toLowerCase().trim();
+  for (const item of items) {
+    const name = item.querySelector('.saved-pl-name')?.textContent?.toLowerCase() || '';
+    item.style.display = (!q || name.includes(q)) ? '' : 'none';
+  }
+}
+
+function toggleSavedPlaylistSongs(id, source) {
+  const saved = typeof getSavedPlaylists === 'function' ? getSavedPlaylists() : [];
+  const pl = saved.find(p => String(p.id) === String(id) && p.source === source);
+  if (!pl || !pl.songs) return;
+
+  const songsContainer = document.getElementById('savedPlSongs_' + String(pl.id).replace(/[^a-zA-Z0-9_-]/g,'_'));
+  if (!songsContainer) return;
+
+  // 如果已经展开则收起
+  if (songsContainer.style.display !== 'none' && songsContainer.children.length > 0) {
+    songsContainer.style.display = 'none';
+    return;
+  }
+
+  // 渲染歌曲列表
+  let html = '';
+  for (let i = 0; i < pl.songs.length; i++) {
+    const s = pl.songs[i];
+    const isFav = typeof isFavorite === 'function' && isFavorite(s.id);
+    html += `<div class="saved-pl-song" data-songs-idx="${i}" data-pl-id="${pl.id}" data-pl-source="${pl.source}">
+      <div class="saved-pl-song-thumb"><svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></div>
+      <div class="saved-pl-song-info">
+        <div class="saved-pl-song-name">${escapeHtml(s.name)}</div>
+        <div class="saved-pl-song-artist">${escapeHtml(s.artist || '')}</div>
+      </div>
+      <span class="saved-pl-song-fav ${isFav ? 'favorited' : ''}" data-song-id="${s.id}">${isFav ? '♥' : '♡'}</span>
+    </div>`;
+  }
+  songsContainer.innerHTML = html;
+  songsContainer.style.display = '';
 }
 
 function renderPlaylist() {
@@ -7792,8 +7911,8 @@ function renderPlaylist() {
 
 // ===== 已导入歌单操作 =====
 function bindSavedPlaylistEvents(container) {
-  // 播放按钮
-  container.querySelectorAll('.saved-pl-load-btn').forEach(btn => {
+  // 播放全部按钮
+  container.querySelectorAll('.saved-pl-play-all').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const id = btn.dataset.plId;
@@ -7813,14 +7932,50 @@ function bindSavedPlaylistEvents(container) {
       }
     });
   });
-  // 卡片点击 = 播放
-  container.querySelectorAll('.saved-pl-card').forEach(card => {
-    card.addEventListener('click', e => {
-      if (e.target.closest('.saved-pl-load-btn') || e.target.closest('.saved-pl-del')) return;
-      const id = card.dataset.plId;
-      const source = card.dataset.plSource;
-      loadSavedPlaylist(id, source);
+  // 点击歌单头部 → 展开/收起歌曲列表
+  container.querySelectorAll('.saved-pl-header').forEach(header => {
+    header.addEventListener('click', e => {
+      if (e.target.closest('.saved-pl-play-all') || e.target.closest('.saved-pl-del')) return;
+      const item = header.closest('.saved-pl-item');
+      if (item) {
+        toggleSavedPlaylistSongs(item.dataset.plId, item.dataset.plSource);
+      }
     });
+  });
+  // 歌曲列表里点击单曲 → 播放
+  container.addEventListener('click', e => {
+    const songRow = e.target.closest('.saved-pl-song');
+    if (!songRow) return;
+    const favBtn = e.target.closest('.saved-pl-song-fav');
+    if (favBtn) {
+      // 收藏/取消收藏
+      e.stopPropagation();
+      const songId = parseInt(favBtn.dataset.songId) || favBtn.dataset.songId;
+      const isFav = favBtn.classList.contains('favorited');
+      if (isFav) {
+        if (typeof removeFavoriteSong === 'function') removeFavoriteSong(songId);
+        favBtn.classList.remove('favorited');
+        favBtn.textContent = '♡';
+      } else {
+        if (typeof addFavoriteSong === 'function') {
+          // 构造一个最小 song 对象用于收藏
+          const plId = songRow.dataset.plId;
+          const plSource = songRow.dataset.plSource;
+          const idx = parseInt(songRow.dataset.songsIdx);
+          const saved = typeof getSavedPlaylists === 'function' ? getSavedPlaylists() : [];
+          const pl = saved.find(p => String(p.id) === String(plId) && p.source === plSource);
+          const s = pl?.songs?.[idx];
+          if (s) addFavoriteSong(s);
+        }
+        favBtn.classList.add('favorited');
+        favBtn.textContent = '♥';
+      }
+      return;
+    }
+    const plId = songRow.dataset.plId;
+    const plSource = songRow.dataset.plSource;
+    const idx = parseInt(songRow.dataset.songsIdx);
+    playSavedPlaylistSong(plId, plSource, idx);
   });
 }
 
@@ -7838,6 +7993,42 @@ function loadSavedPlaylist(id, source) {
   window.currentPlaylistIndex = 0;
   playFromPlaylist(0);
   renderPlaylist();
+}
+
+/** 播放在已导入歌单列表中的单首歌曲（不替换当前播放列表） */
+async function playSavedPlaylistSong(plId, plSource, songIdx) {
+  const saved = typeof getSavedPlaylists === 'function' ? getSavedPlaylists() : [];
+  const pl = saved.find(p => String(p.id) === String(plId) && p.source === plSource);
+  if (!pl || !pl.songs || songIdx < 0 || songIdx >= pl.songs.length) return;
+  const song = pl.songs[songIdx];
+  // 如果有 url 直接播，否则走 resolve
+  if (song.url) {
+    addToHistory(song);
+    await playFromHistory(0);
+    return;
+  }
+  // 没 url 用 resolveSongUrlById
+  let fresh = await window.resolveSongUrlById(song.id, song.platform || song.source || '');
+  if (!fresh || !fresh.url) {
+    // 回退到搜索
+    fresh = await searchAndPlay(song.name, song.artist, { searchOnly: true });
+  }
+  if (fresh && fresh.url) {
+    song.url = fresh.url;
+    if (fresh.picUrl) song.picUrl = song.picUrl || fresh.picUrl;
+    if (fresh.source) song.source = fresh.source;
+    // 回写到存储
+    const allSaved = getSavedPlaylists();
+    const foundPl = allSaved.find(p => String(p.id) === String(plId) && p.source === plSource);
+    if (foundPl && foundPl.songs[songIdx]) {
+      foundPl.songs[songIdx].url = fresh.url;
+      saveSavedPlaylists(allSaved);
+    }
+    addToHistory(song);
+    await playFromHistory(0);
+  } else {
+    _toast(`找不到「${song.name}」的可播放版本`);
+  }
 }
 
 function showClearPlaylistConfirm() {
@@ -16175,6 +16366,43 @@ const AlbumGallery = {
     return Array.from(albumMap.values());
   },
 
+  extractImported() {
+    const saved = typeof getSavedPlaylists === 'function' ? getSavedPlaylists() : [];
+    if (!saved || saved.length === 0) return [];
+    const albumMap = new Map();
+    const songNameMap = new Map();
+    for (const pl of saved) {
+      if (!pl.songs) continue;
+      for (const song of pl.songs) {
+        if (!song.picUrl) continue;
+        const albumName = song.album || '';
+        const normalizedPic = (song.picUrl || '').split('?')[0];
+        let key = albumName ? (albumName + '|' + (song.artist || '')) : normalizedPic;
+        const songKey = (song.name || '') + '|' + (song.artist || '');
+        if (songNameMap.has(songKey) && albumMap.has(songNameMap.get(songKey))) {
+          key = songNameMap.get(songKey);
+        } else {
+          songNameMap.set(songKey, key);
+        }
+        if (!albumMap.has(key)) {
+          albumMap.set(key, {
+            picUrl: song.picUrl,
+            name: albumName || '未知专辑',
+            displayName: albumName || '未知专辑',
+            artist: song.artist,
+            songs: [song],
+            isFavorite: false
+          });
+        } else {
+          const existing = albumMap.get(key);
+          const alreadyExists = existing.songs.some(ex => (ex.name || '') === (song.name || '') && (ex.artist || '') === (song.artist || ''));
+          if (!alreadyExists) existing.songs.push(song);
+        }
+      }
+    }
+    return Array.from(albumMap.values());
+  },
+
   _loadTexture(url) {
     return new Promise(resolve => {
       const img = new Image();
@@ -17221,7 +17449,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const onEnd = (x) => {
     const dx = x - startX;
     if (Math.abs(dx) > 30) {
-      const allModes = ['all', 'favorites'];
+      const allModes = ['all', 'favorites', 'imported'];
       const idx = allModes.indexOf(_galleryMode);
       const dir = dx < 0 ? 1 : -1;
       const next = allModes[(idx + dir + allModes.length) % allModes.length];
@@ -17234,15 +17462,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // ===== Gallery Mode Switch (历史 / 喜欢) =====
-let _galleryMode = 'all'; // 'all' | 'favorites'
+let _galleryMode = 'all'; // 'all' | 'favorites' | 'imported'
 
 function updateCapsuleUI(mode) {
   const slider = document.getElementById('capsuleSlider');
   const opts = document.querySelectorAll('.capsule-option');
-  if (slider && opts.length >= 2) {
-    const isFav = mode === 'favorites';
-    slider.classList.toggle('fav', isFav);
-    slider.style.left = isFav ? '50%' : '0';
+  if (slider && opts.length >= 3) {
+    const positions = { all: '0%', favorites: '33.33%', imported: '66.66%' };
+    const pct = positions[mode] || '0%';
+    slider.style.left = pct;
+    slider.style.width = '33.33%';
   }
   opts.forEach(opt => opt.classList.toggle('active', opt.dataset.mode === mode));
 }
@@ -17255,13 +17484,23 @@ function switchGalleryMode(mode) {
   updateCapsuleUI(mode);
 
   // Get albums for the new mode
-  const albums = mode === 'favorites' ? AlbumGallery.extractFavorites() : AlbumGallery.extractAlbums();
+  let albums = [];
+  if (mode === 'favorites') {
+    albums = AlbumGallery.extractFavorites();
+  } else if (mode === 'imported') {
+    albums = AlbumGallery.extractImported();
+  } else {
+    albums = AlbumGallery.extractAlbums();
+  }
   const subtitle = document.getElementById('albumDriftSubtitle');
 
   if (subtitle) {
-    subtitle.textContent = albums.length > 0
-      ? (albums.length + ' 张' + (mode === 'favorites' ? '喜欢' : '专辑'))
-      : (mode === 'favorites' ? '还没有收藏' : '');
+    if (albums.length > 0) {
+      const label = mode === 'favorites' ? '喜欢' : mode === 'imported' ? '导入' : '专辑';
+      subtitle.textContent = albums.length + ' 张' + label;
+    } else {
+      subtitle.textContent = mode === 'favorites' ? '还没有收藏' : mode === 'imported' ? '还没有导入歌单' : '';
+    }
   }
 
   // Clean stop + start with new data
@@ -17615,9 +17854,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const driftInfo = document.getElementById('albumDriftInfo');
       if (driftInfo) driftInfo.classList.add('active');
       if (typeof updateCapsuleUI === 'function') updateCapsuleUI(_galleryMode);
-      const albums = _galleryMode === 'favorites' ? AlbumGallery.extractFavorites() : AlbumGallery.extractAlbums();
+      let albums = [];
+      if (_galleryMode === 'favorites') albums = AlbumGallery.extractFavorites();
+      else if (_galleryMode === 'imported') albums = AlbumGallery.extractImported();
+      else albums = AlbumGallery.extractAlbums();
       const subtitle = document.getElementById('albumDriftSubtitle');
-      if (subtitle) subtitle.textContent = albums.length > 0 ? (albums.length + ' 张' + (_galleryMode === 'favorites' ? '喜欢' : '专辑')) : '还没有收藏';
+      if (subtitle) {
+        if (albums.length > 0) {
+          const label = _galleryMode === 'favorites' ? '喜欢' : _galleryMode === 'imported' ? '导入' : '专辑';
+          subtitle.textContent = albums.length + ' 张' + label;
+        } else {
+          subtitle.textContent = _galleryMode === 'favorites' ? '还没有收藏' : _galleryMode === 'imported' ? '还没有导入歌单' : '';
+        }
+      }
       const galleryPromise = AlbumGallery.start(albums);
 
       await playTransitionWave('light');

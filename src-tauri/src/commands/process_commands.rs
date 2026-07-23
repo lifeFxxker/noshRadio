@@ -34,7 +34,7 @@ impl ServiceManager {
             Ok(s) => s,
             Err(_) => return false,
         };
-        if let Some(child) = services.get(name) {
+        if let Some(child) = services.get_mut(name) {
             match child.try_wait() {
                 Ok(Some(_)) => {
                     // 进程已退出，移除
