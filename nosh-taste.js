@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   LISTENING_HISTORY: 'noshListeningHistory',
   SETTINGS: 'noshSettings',
   ANONYMOUS_ID: 'noshAnonymousId',
+  SAVED_PLAYLISTS: 'noshSavedPlaylists',
 };
 
 // ===== 播放历史（跨刷新持久化）=====
@@ -96,10 +97,46 @@ function savePlaylist(playlist) {
   } catch (e) { console.warn('nosh: savePlaylist failed', e); }
 }
 
+// ===== 已导入歌单库（多个歌单）=====
+function getSavedPlaylists() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.SAVED_PLAYLISTS);
+    return data ? JSON.parse(data) : [];
+  } catch (e) { return []; }
+}
+
+function saveSavedPlaylists(list) {
+  try {
+    persistData(STORAGE_KEYS.SAVED_PLAYLISTS, list);
+  } catch (e) { console.warn('nosh: saveSavedPlaylists failed', e); }
+}
+
+function addSavedPlaylist(playlistObj) {
+  try {
+    const list = getSavedPlaylists();
+    // 去重：同 id 同 source 覆盖
+    const idx = list.findIndex(p => p.id === playlistObj.id && p.source === playlistObj.source);
+    if (idx >= 0) list[idx] = { ...playlistObj, importedAt: Date.now() };
+    else list.push({ ...playlistObj, importedAt: Date.now() });
+    saveSavedPlaylists(list);
+    return list;
+  } catch (e) { console.warn('nosh: addSavedPlaylist failed', e); return getSavedPlaylists(); }
+}
+
+function removeSavedPlaylist(id, source) {
+  try {
+    let list = getSavedPlaylists();
+    list = list.filter(p => !(p.id === id && p.source === source));
+    saveSavedPlaylists(list);
+    return list;
+  } catch (e) { console.warn('nosh: removeSavedPlaylist failed', e); return []; }
+}
+
 function getListeningHistory() {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.LISTENING_HISTORY);
-    return data ? JSON.parse(data) : [];
+    if (!data || data === 'null') return [];
+    return JSON.parse(data);
   } catch (e) { return []; }
 }
 
@@ -228,6 +265,10 @@ function addSongToPlaylist(song) {
 }
 
 function addSongToPlaylistOrCreate(song) {
+  // 标准化 album 字段：兼容 search result 的 flat albumName
+  if (!song.album && song.albumName) {
+    song.album = { name: song.albumName };
+  }
   let playlist = getPlaylist();
   if (!playlist) {
     playlist = createPlaylist([], null);

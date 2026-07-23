@@ -2,69 +2,27 @@
   "name": "noshradio",
   "version": "1.0.1",
   "description": "noshRadio — 多音源聚合桌面音乐播放器",
-  "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder",
-    "dist": "electron-builder --win",
+    "dev:server": "node -e \"var h=require('http'),f=require('fs'),p=require('path');h.createServer((r,s)=>{var file=r.url==='/'?'nosh-music-ai.html':r.url.slice(1);f.readFile(p.join(__dirname,file),(e,d)=>{if(e){s.writeHead(404);s.end('404')}else{s.writeHead(200,{'Content-Type':file.endsWith('.html')?'text/html':file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':file.endsWith('.png')?'image/png':'application/octet-stream'});s.end(d)}})}).listen(1420,()=>console.log('Dev server on http://localhost:1420'))\"",
+    "dev:tauri": "cd src-tauri && tauri dev",
+    "dev": "cd src-tauri && tauri dev",
+    "build:tauri": "cd src-tauri && tauri build",
     "test": "node --test __tests__/",
     "icon": "node build/generate-ico.js"
   },
-  "build": {
-    "appId": "com.noshradio.app",
-    "productName": "noshRadio",
-    "asar": false,
-    "directories": {
-      "output": "release",
-      "buildResources": "build"
-    },
-    "electronDist": ".electron-dist",
-    "files": [
-      "!plugins/**/*",
-      "!.electron-dist/**/*",
-      "!**/nosh-music-ai - 副本*",
-      "!**/nosh-music-ai (1)*",
-      "!build/generate-ico.js",
-      "!build/icon.png",
-      "!build/icon.ico"
-    ],
-    "win": {
-      "target": [
-        "nsis"
-      ],
-      "icon": "build/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "shortcutName": "noshRadio",
-      "include": "build/installer.nsh"
-    }
-  },
   "dependencies": {
     "express": "^4.21.0",
-    "gsap": "^3.15.0",
     "migu-music-api": "^1.0.1",
     "NeteaseCloudMusicApi": "4.32.0",
-    "protobufjs": "^8.6.5",
-    "roughjs": "^4.6.6",
-    "wired-elements": "^2.1.2",
-    "wired-fab": "^2.1.0"
-  },
-  "update": {
-    "giteeOwner": "yangshengzhe",
-    "giteeRepo": "nosh-radio"
+    "protobufjs": "^8.6.5"
   },
   "devDependencies": {
-    "electron": "^42.5.0",
-    "electron-builder": "^26.15.3",
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/cli": "^2.11.4",
     "esbuild": "^0.28.0",
     "javascript-obfuscator": "^5.4.3",
     "jimp": "^1.6.1",
     "pino": "^10.3.1",
-    "png-to-ico": "^3.0.2",
     "vite": "^8.0.11",
     "webpack": "^5.108.4",
     "webpack-cli": "^7.2.1",

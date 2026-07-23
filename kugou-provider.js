@@ -248,27 +248,50 @@ class KugouProvider {
 
   /**
    * 获取歌词
+   * 使用 krcs.kugou.com 搜索 + lyrics.kugou.com 下载
    * @param {string} trackId - 歌曲ID (kgtrack_{hash})
    * @returns {Promise<{lyric: string}|null>}
    */
   static async getLyric(trackId) {
     const hash = trackId.replace('kgtrack_', '');
-    const lyricUrl = `https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=${hash}&platid=4&album_id=&_=${Date.now()}`;
+    const searchUrl = `http://krcs.kugou.com/search?ver=1&man=yes&client=mobi&keyword=&duration=&hash=${hash}`;
 
     try {
-      const response = await axios.get(lyricUrl, {
+      // 1. 搜索歌词候选
+      const searchRes = await axios.get(searchUrl, {
+        timeout: 8000,
         headers: {
           'User-Agent': 'Mozilla/5.0',
           'Referer': 'https://www.kugou.com/'
         }
       });
 
-      const data = response.data;
-      if (data.data && data.data.lyrics) {
-        return {
-          lyric: data.data.lyrics
-        };
+      const searchData = searchRes.data;
+      if (searchData.status !== 200 || !searchData.candidates || searchData.candidates.length === 0) {
+        return { lyric: '' };
       }
+
+      // 取第一个候选
+      const candidate = searchData.candidates[0];
+      const { id, accesskey } = candidate;
+      if (!id || !accesskey) return { lyric: '' };
+
+      // 2. 下载 LRC 格式歌词
+      const dlUrl = `http://lyrics.kugou.com/download?ver=1&client=pc&id=${id}&accesskey=${accesskey}&fmt=lrc&charset=utf8`;
+      const dlRes = await axios.get(dlUrl, {
+        timeout: 8000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+          'Referer': 'https://www.kugou.com/'
+        }
+      });
+
+      const dlData = dlRes.data;
+      if (dlData.status === 200 && dlData.content) {
+        const lrcText = Buffer.from(dlData.content, 'base64').toString('utf-8');
+        return { lyric: lrcText };
+      }
+
       return { lyric: '' };
     } catch (error) {
       console.error('Kugou getLyric error:', error.message);

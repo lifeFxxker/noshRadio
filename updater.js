@@ -76,13 +76,34 @@ async function checkForUpdate(currentVersion) {
   const asset = assets.find(a => a.name.endsWith('.exe') && !a.name.endsWith('.exe.blockmap'));
   if (!asset) return null;
 
+  // Gitee API 有时不返回 asset.size，尝试通过 HEAD 请求获取真实大小
+  let assetSize = asset.size || 0;
+  if (!assetSize) {
+    try {
+      const downloadUrl = asset.browser_download_url || asset.name;
+      const url = downloadUrl.startsWith('http')
+        ? downloadUrl
+        : `https://gitee.com${downloadUrl}`;
+      const proto = url.startsWith('https') ? https : http;
+      assetSize = await new Promise((resolve) => {
+        const req = proto.request(url, { method: 'HEAD', timeout: 5000 }, (res) => {
+          resolve(parseInt(res.headers['content-length'], 10) || 0);
+        });
+        req.on('error', () => resolve(0));
+        req.end();
+      });
+    } catch {
+      assetSize = 0;
+    }
+  }
+
   return {
     version: latestTag,
     tagName: data.tag_name,
     releaseNotes: data.body || '',
     downloadUrl: asset.browser_download_url || asset.name,
     assetName: asset.name,
-    assetSize: asset.size || 0,
+    assetSize,
   };
 }
 
@@ -93,61 +114,94 @@ async function checkForUpdate(currentVersion) {
  * @returns {string} 下载到的本地文件路径
  */
 function downloadUpdate(updateInfo, onProgress) {
-  return new Promise((resolve, reject) => {
-    const tmpDir = process.env.TEMP || '.';
-    const destPath = path.join(tmpDir, `noshRadio-update-${updateInfo.version}.exe`);
-    const file = fs.createWriteStream(destPath);
+  const tmpDir = process.env.TEMP || '.';
+  const destPath = path.join(tmpDir, `noshRadio-update-${updateInfo.version}.exe`);
 
-    // Gitee 的 browser_download_url 可能是一个相对路径，需补全域名
-    const url = updateInfo.downloadUrl.startsWith('http')
-      ? updateInfo.downloadUrl
-      : `https://gitee.com${updateInfo.downloadUrl}`;
+  // Gitee 的 browser_download_url 可能是一个相对路径，需补全域名
+  let url = updateInfo.downloadUrl.startsWith('http')
+    ? updateInfo.downloadUrl
+    : `https://gitee.com${updateInfo.downloadUrl}`;
 
-    https.get(url, { timeout: 300000 }, (res) => {
-      // 处理重定向
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        // 改为用 http 或 https 跟随重定向后的 URL
-        https.get(res.headers.location, { timeout: 300000 }, (res2) => {
-          pipeDownload(res2, file, destPath, onProgress, resolve, reject);
-        }).on('error', reject);
-        return;
-      }
-      pipeDownload(res, file, destPath, onProgress, resolve, reject);
-    }).on('error', reject);
-  });
+  return downloadWithRedirects(url, destPath, onProgress, 5);
 }
 
-function pipeDownload(response, file, destPath, onProgress, resolve, reject) {
-  const total = parseInt(response.headers['content-length'], 10) || 0;
-  let received = 0;
+/**
+ * 递归下载，跟随重定向链（最多 maxRedirects 层）
+ */
+function downloadWithRedirects(url, destPath, onProgress, maxRedirects) {
+  return new Promise((resolve, reject) => {
+    const proto = url.startsWith('https') ? https : http;
 
-  response.on('data', (chunk) => {
-    received += chunk.length;
-    if (total && onProgress) {
-      onProgress({
-        percent: Math.min(100, Math.round(received / total * 100)),
-        bytes: received,
-        total,
+    proto.get(url, { timeout: 300000 }, (res) => {
+      // 处理重定向
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        res.resume(); // 消耗掉响应体以释放连接
+        if (maxRedirects <= 0) {
+          return reject(new Error(`重定向次数过多`));
+        }
+        const redirectUrl = res.headers.location.startsWith('http')
+          ? res.headers.location
+          : new URL(res.headers.location, url).href;
+        return resolve(downloadWithRedirects(redirectUrl, destPath, onProgress, maxRedirects - 1));
+      }
+
+      // 非 200 视为错误
+      if (res.statusCode !== 200) {
+        res.resume();
+        return reject(new Error(`服务器返回状态码 ${res.statusCode}`));
+      }
+
+      const total = parseInt(res.headers['content-length'], 10) || 0;
+      if (total > 0 && total < 1024 * 1024) {
+        res.resume();
+        return reject(new Error(`安装包过小 (${(total / 1024 / 1024).toFixed(1)}MB)，下载地址可能不正确`));
+      }
+
+      // 开始写入文件
+      const file = fs.createWriteStream(destPath);
+      let received = 0;
+
+      res.on('data', (chunk) => {
+        received += chunk.length;
+        if (total && onProgress) {
+          onProgress({
+            percent: Math.min(100, Math.round(received / total * 100)),
+            bytes: received,
+            total,
+          });
+        }
       });
-    }
-  });
 
-  response.pipe(file);
+      res.pipe(file);
 
-  file.on('finish', () => {
-    file.close();
-    resolve(destPath);
-  });
+      file.on('finish', () => {
+        file.close();
 
-  response.on('error', (err) => {
-    file.close();
-    fs.unlink(destPath, () => {});
-    reject(err);
-  });
+        // 最终验证文件大小
+        try {
+          const stat = fs.statSync(destPath);
+          if (stat.size < 1024 * 1024) {
+            fs.unlink(destPath, () => {});
+            return reject(new Error(`下载的文件过小 (${(stat.size / 1024 / 1024).toFixed(1)}MB)`));
+          }
+        } catch (e) {
+          return reject(new Error(`无法检查下载的文件: ${e.message}`));
+        }
 
-  file.on('error', (err) => {
-    fs.unlink(destPath, () => {});
-    reject(err);
+        resolve(destPath);
+      });
+
+      res.on('error', (err) => {
+        file.close();
+        fs.unlink(destPath, () => {});
+        reject(err);
+      });
+
+      file.on('error', (err) => {
+        fs.unlink(destPath, () => {});
+        reject(err);
+      });
+    }).on('error', reject);
   });
 }
 
@@ -155,19 +209,37 @@ function pipeDownload(response, file, destPath, onProgress, resolve, reject) {
  * 执行静默安装
  * @param {string} downloadPath - 下载好的 .exe 路径
  * @param {string} [installDir] - 安装目录，默认从 process.execPath 推导
+ * @returns {{ success: boolean, error?: string }}
  */
 function installUpdate(downloadPath, installDir) {
   const dir = installDir || path.dirname(process.execPath);
 
-  console.log(`[updater] Installing: ${downloadPath} → ${dir}`);
+  // 校验安装包存在
+  if (!downloadPath || !fs.existsSync(downloadPath)) {
+    return { success: false, error: `安装包不存在: ${downloadPath}` };
+  }
+  // 校验 exe 文件大小（至少 1MB 才合理）
+  const stat = fs.statSync(downloadPath);
+  if (stat.size < 1024 * 1024) {
+    return { success: false, error: `安装包异常 (${(stat.size / 1024 / 1024).toFixed(1)}MB)，文件可能损坏或下载不完整` };
+  }
 
-  const child = spawn(downloadPath, ['/S', `/D=${dir}`], {
-    detached: true,
-    stdio: 'ignore',
-    windowsHide: true,
-  });
+  console.log(`[updater] Installing: ${downloadPath} (${(stat.size / 1024 / 1024).toFixed(1)}MB) → ${dir}`);
 
-  child.unref(); // 让子进程独立于父进程运行
+  try {
+    const child = spawn(downloadPath, ['/S', `/D=${dir}`], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    child.on('error', (err) => {
+      console.error(`[updater] 安装进程启动失败: ${err.message}`);
+    });
+    child.unref(); // 让子进程独立于父进程运行
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: `启动安装程序失败: ${e.message}` };
+  }
 }
 
 module.exports = { checkForUpdate, downloadUpdate, installUpdate };

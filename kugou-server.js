@@ -6,6 +6,7 @@
  */
 
 const express = require('express');
+const url = require('url');
 const KugouProvider = require('./kugou-provider');
 
 const app = express();
@@ -20,12 +21,30 @@ app.use((req, res, next) => {
   next();
 });
 
-// 搜索歌曲
+// ─── 调试：回显请求详情 ──────────────────────────────────────
+app.get('/debug-req', (req, res) => {
+  const parsed = url.parse(req.url, true);
+  res.json({
+    rawUrl: req.url,
+    parsedPathname: parsed.pathname,
+    parsedSearch: parsed.search,
+    parsedQuery: parsed.query,
+    expressQuery: req.query,
+  });
+});
+
+// 搜索歌曲（使用 url.parse 直接解析，不依赖 Express req.query）
 app.get('/search', async (req, res) => {
   try {
-    const { keywords, limit = 20, page = 1 } = req.query;
+    const parsed = url.parse(req.url, true);
+    const keywords = parsed.query && parsed.query.keywords;
+    const limit = parseInt(String(parsed.query?.limit || '20'), 10);
+    const page = parseInt(String(parsed.query?.page || '1'), 10);
+
+    console.log(`[kugou] search req.url="${req.url}" parsed.keywords="${keywords}"`);
+
     if (!keywords) {
-      return res.status(400).json({ error: 'keywords required' });
+      return res.status(400).json({ error: 'keywords required', receivedUrl: req.url, parsedQuery: parsed.query });
     }
 
     const result = await KugouProvider.search(keywords, page, limit);

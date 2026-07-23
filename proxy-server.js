@@ -5,6 +5,15 @@ const path = require('path');
 const url = require('url');
 const { spawn } = require('child_process');
 
+// ─── 进程崩溃保护：捕获未处理异常/拒绝，防止进程意外退出 ──
+process.on('uncaughtException', (err) => {
+  console.error('[crash] UNCAUGHT EXCEPTION:', err?.message || err);
+  console.error(err?.stack || '');
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[crash] UNHANDLED REJECTION:', reason?.message || reason);
+});
+
 // ─── 插件加载 ─────────────────────────────────────────────────
 const PLUGIN_PATH = process.env.SOURCE_PLUGIN_PATH || '';
 let sourceBridge = null;       // bridge.js 导出的模块
@@ -70,8 +79,24 @@ function cleanupSourceServer() {
 const pluginLoaded = tryLoadSourcePlugin();
 process.on('exit', cleanupSourceServer);
 
+// 防御性加载：如果 lib/bili-wbi.js 缺失或报错，走 stub 避免整个服务器无法启动
+let wbi;
+try {
+  wbi = require('./lib/bili-wbi');
+} catch (e) {
+  console.error('[proxy] 加载 lib/bili-wbi.js 失败，Bilibili API 不可用:', e.message);
+  // 提供一个空的 wbi 占位，调用时返回错误而不是 crash
+  wbi = {
+    sign: async () => { throw new Error('WBI 未加载'); },
+    commonHeaders: async () => ({}),
+  };
+}
+
 // ─── HTTP 服务 ────────────────────────────────────────────────
-const port = 8081;
+// 应用根目录：主进程通过环境变量传入，确保打包后能正确找到 ASAR 内的静态文件
+const APP_ROOT = process.env.APP_ROOT || __dirname;
+
+const port = parseInt(process.env.PORT, 10) || 8081;
 
 const mimeTypes = {
   '.html': 'text/html',
@@ -85,6 +110,7 @@ function proxyRequest(req, res, targetHost, targetPort, prefixToStrip) {
   const parsedUrl = url.parse(req.url, true);
 
   const newPath = parsedUrl.pathname.replace(new RegExp(`^${prefixToStrip}`), '') + (parsedUrl.search || '');
+  const upstreamUrl = `http://${targetHost}:${targetPort}${newPath}`;
 
   const options = {
     hostname: targetHost,
@@ -104,25 +130,93 @@ function proxyRequest(req, res, targetHost, targetPort, prefixToStrip) {
   const proxyReq = http.request(options, (proxyRes) => {
     const responseHeaders = { ...proxyRes.headers };
 
-    res.writeHead(proxyRes.statusCode, {
-      ...responseHeaders,
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+    // 删除上游 CORS 头，避免浏览器拒绝重复值（'*, *'）
+    delete responseHeaders['access-control-allow-origin'];
+
+    // 缓存上游响应体，以便非 2xx 时暴露诊断信息
+    const chunks = [];
+    proxyRes.on('data', (c) => chunks.push(c));
+    proxyRes.on('end', () => {
+      const body = Buffer.concat(chunks);
+      const bodyStr = body.toString('utf8');
+
+      // 构建调试头
+      const debugHeaders = {
+        'X-Debug-Upstream': upstreamUrl,
+        'X-Debug-Upstream-Status': String(proxyRes.statusCode),
+      };
+      // 非成功时附带上游响应体（截断防撑爆）
+      if (proxyRes.statusCode < 200 || proxyRes.statusCode >= 300) {
+        debugHeaders['X-Debug-Upstream-Body'] = bodyStr.slice(0, 500);
+      }
+
+      res.writeHead(proxyRes.statusCode, {
+        ...responseHeaders,
+        ...debugHeaders,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Expose-Headers': 'X-Debug-Upstream, X-Debug-Upstream-Status, X-Debug-Upstream-Body',
+      });
+      res.end(body);
     });
-    proxyRes.pipe(res);
   });
 
   proxyReq.on('error', (e) => {
     console.error('Proxy error:', e);
-    res.writeHead(502);
+    res.writeHead(502, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Expose-Headers': 'X-Debug-Upstream, X-Debug-Error',
+      'X-Debug-Upstream': upstreamUrl,
+      'X-Debug-Error': e.message,
+    });
     res.end(JSON.stringify({ error: 'Bad Gateway', message: e.message }));
   });
 
   req.pipe(proxyReq);
 }
 
+function readJSONBody(req) {
+  return new Promise((resolve) => {
+    let body = '';
+    req.on('data', (c) => { body += c; });
+    req.on('end', () => {
+      try { resolve(JSON.parse(body)); } catch (e) { resolve({}); }
+    });
+  });
+}
+
+function respondJSON(res, data, status = 200) {
+  res.writeHead(status, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+  });
+  res.end(JSON.stringify(data));
+}
+
+function pluginGuard(res) {
+  if (!sourceBridge) {
+    respondJSON(res, { success: false, pluginMissing: true, error: '音源插件未安装' });
+    return true;
+  }
+  return false;
+}
+
 const server = http.createServer((req, res) => {
+  try {
+    handleRequest(req, res);
+  } catch (e) {
+    console.error('[crash] 请求处理异常:', e?.message || e);
+    if (!res.headersSent) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Internal Server Error' }));
+    }
+  }
+});
+
+async function handleRequest(req, res) {
   const parsedUrl = url.parse(req.url, true);
 
   // 代理 /netease/* 请求到 NeteaseCloudMusicApi (网易云)
@@ -236,6 +330,102 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ── Plugin API ────────────────────────────────────────────
+
+  // GET /api/plugin/capabilities - 查询插件能力
+  if (parsedUrl.pathname === '/api/plugin/capabilities') {
+    if (pluginGuard(res)) return;
+    const capabilities = typeof sourceBridge.getCapabilities === 'function'
+      ? sourceBridge.getCapabilities() : [];
+    respondJSON(res, { success: true, capabilities });
+    return;
+  }
+
+  // GET /api/plugin/info - 查询插件信息
+  if (parsedUrl.pathname === '/api/plugin/info') {
+    if (pluginGuard(res)) return;
+    const info = typeof sourceBridge.getInfo === 'function'
+      ? sourceBridge.getInfo() : { name: 'unknown' };
+    respondJSON(res, { success: true, info });
+    return;
+  }
+
+  // POST /api/plugin/search - 搜索网易云歌曲
+  if (parsedUrl.pathname === '/api/plugin/search' && req.method === 'POST') {
+    if (pluginGuard(res)) return;
+    if (typeof sourceBridge.search !== 'function') {
+      respondJSON(res, { success: false, error: 'search not supported' });
+      return;
+    }
+    (async () => {
+      const body = await readJSONBody(req);
+      const keyword = body.keyword || '';
+      if (!keyword) {
+        respondJSON(res, { success: false, error: 'keyword required' });
+        return;
+      }
+      try {
+        const songs = await sourceBridge.search(keyword);
+        respondJSON(res, { success: true, songs });
+      } catch (e) {
+        respondJSON(res, { success: false, error: e.message });
+      }
+    })();
+    return;
+  }
+
+  // POST /api/plugin/resolve - 解析歌曲播放 URL（完整链路）
+  if (parsedUrl.pathname === '/api/plugin/resolve' && req.method === 'POST') {
+    if (pluginGuard(res)) return;
+    if (typeof sourceBridge.resolveSong !== 'function') {
+      respondJSON(res, { success: false, error: 'resolveSong not supported' });
+      return;
+    }
+    (async () => {
+      const body = await readJSONBody(req);
+      const songId = body.songId || '';
+      if (!songId) {
+        respondJSON(res, { success: false, error: 'songId required' });
+        return;
+      }
+      try {
+        const result = await sourceBridge.resolveSong(songId);
+        if (result && result.url) {
+          respondJSON(res, { success: true, url: result.url, source: result.source });
+        } else {
+          respondJSON(res, { success: false, error: '无法解析播放地址' });
+        }
+      } catch (e) {
+        respondJSON(res, { success: false, error: e.message });
+      }
+    })();
+    return;
+  }
+
+  // POST /api/plugin/detail - 获取歌曲详情
+  if (parsedUrl.pathname === '/api/plugin/detail' && req.method === 'POST') {
+    if (pluginGuard(res)) return;
+    if (typeof sourceBridge.songDetail !== 'function') {
+      respondJSON(res, { success: false, error: 'songDetail not supported' });
+      return;
+    }
+    (async () => {
+      const body = await readJSONBody(req);
+      const songId = body.songId || '';
+      if (!songId) {
+        respondJSON(res, { success: false, error: 'songId required' });
+        return;
+      }
+      try {
+        const detail = await sourceBridge.songDetail(songId);
+        respondJSON(res, { success: true, detail });
+      } catch (e) {
+        respondJSON(res, { success: false, error: e.message });
+      }
+    })();
+    return;
+  }
+
   // API: 代理音频文件（解决外部 CDN 跨域问题）
   if (parsedUrl.pathname === '/api/audio-proxy') {
     const audioUrl = parsedUrl.query.url;
@@ -320,7 +510,6 @@ const server = http.createServer((req, res) => {
   }
 
   // ==================== Bilibili API ====================
-  const wbi = require('./lib/bili-wbi');
 
   // B站搜索视频（WBI 签名）
   if (parsedUrl.pathname === '/api/bili/search') {
@@ -531,7 +720,7 @@ message DanmakuElem {
           res.end(JSON.stringify({ success: false, error: 'Missing key' }));
           return;
         }
-        const dataDir = path.join(__dirname, 'data');
+        const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
         if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
         const filePath = path.join(dataDir, key.replace(/[^a-zA-Z0-9_-]/g, '') + '.json');
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
@@ -553,7 +742,8 @@ message DanmakuElem {
       res.end(JSON.stringify({ success: false, error: 'Missing key parameter' }));
       return;
     }
-    const filePath = path.join(__dirname, 'data', key.replace(/[^a-zA-Z0-9_-]/g, '') + '.json');
+    const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
+    const filePath = path.join(dataDir, key.replace(/[^a-zA-Z0-9_-]/g, '') + '.json');
     if (!fs.existsSync(filePath)) {
       res.writeHead(404, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
       res.end(JSON.stringify({ success: false, error: 'not found' }));
@@ -581,17 +771,24 @@ message DanmakuElem {
     return;
   }
 
-  // 静态文件服务
+  // 健康检查
+  if (parsedUrl.pathname === '/api/ping') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify({ pong: true }));
+    return;
+  }
+
+  // 静态文件服务（使用 APP_ROOT，兼容打包后 ASAR 路径）
   let filePath = parsedUrl.pathname;
   if (filePath === '/') {
     filePath = '/nosh-music-ai.html';
-    filePath = path.join(__dirname, filePath);
+    filePath = path.join(APP_ROOT, filePath);
   } else {
-    filePath = path.join(__dirname, filePath);
+    filePath = path.join(APP_ROOT, filePath);
   }
 
   if (!fs.existsSync(filePath)) {
-    res.writeHead(404);
+    res.writeHead(404, { 'Access-Control-Allow-Origin': '*' });
     res.end('Not Found');
     return;
   }
@@ -608,7 +805,7 @@ message DanmakuElem {
     res.writeHead(200, { 'Content-Type': contentType });
     res.end(content);
   });
-});
+}
 
 server.listen(port, '0.0.0.0', () => {
   console.log(`Server running at http://localhost:${port}/`);

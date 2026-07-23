@@ -71,6 +71,7 @@ function getPluginPath(name) {
 
 // ─── 服务定义 ─────────────────────────────────────────────────
 // NeteaseCloudMusicApi 作为 npm 依赖安装在 node_modules 下
+// 注意：打包后 app.asar.unpacked/node_modules/NeteaseCloudMusicApi/
 function neteaseCwd() {
   return path.join(APP_ROOT, 'node_modules', 'NeteaseCloudMusicApi');
 }
@@ -135,21 +136,42 @@ function startService(svc) {
   };
   if (svc.name === 'proxy-server') {
     envOverrides.SOURCE_PLUGIN_PATH = getPluginPath('source-bridge');
+    // 传 app 根目录（打包后 proxy 解压到 asar.unpacked，但静态文件在 asar 内）
+    envOverrides.APP_ROOT = APP_ROOT;
+    // 可写数据目录
+    envOverrides.DATA_DIR = path.join(app.getPath('userData'), 'data');
   }
 
-  // 使用 utilityProcess.fork() —— 一个轻量的 Node.js 子进程，
-  // 不加载 Chromium，比 spawn(process.execPath, ...) 轻得多，
-  // 且适用于未安装系统 Node.js 的机器。
-  const child = utilityProcess.fork(
-    path.join(svc.cwd, svc.script),
-    [],
-    {
-      serviceName: svc.name,
-      cwd: svc.cwd,
-      env: envOverrides,
-      stdio: 'pipe',
-    },
-  );
+  // utilityProcess.fork() 脚本路径（打包后 asarUnpack 的文件在 app.asar.unpacked/ 下）
+  // 直接用 ASAR 路径 fork 会失败，必须用实际文件系统路径
+  let child;
+  if (app.isPackaged) {
+    const scriptRelPath = path.relative(APP_ROOT, path.join(svc.cwd, svc.script));
+    const unpackedRoot = path.join(process.resourcesPath, 'app.asar.unpacked');
+    const scriptPath = path.join(unpackedRoot, scriptRelPath);
+    const unpackedCwd = path.join(unpackedRoot, path.relative(APP_ROOT, svc.cwd));
+    child = utilityProcess.fork(
+      fs.existsSync(scriptPath) ? scriptPath : path.join(svc.cwd, svc.script),
+      [],
+      {
+        serviceName: svc.name,
+        cwd: fs.existsSync(unpackedCwd) ? unpackedCwd : svc.cwd,
+        env: envOverrides,
+        stdio: 'pipe',
+      },
+    );
+  } else {
+    child = utilityProcess.fork(
+      path.join(svc.cwd, svc.script),
+      [],
+      {
+        serviceName: svc.name,
+        cwd: svc.cwd,
+        env: envOverrides,
+        stdio: 'pipe',
+      },
+    );
+  }
 
   const outStream = fs.createWriteStream(logFile(svc.name), { flags: 'a' });
   const errStream = fs.createWriteStream(logFile(`${svc.name}-err`), { flags: 'a' });
@@ -242,18 +264,25 @@ function setupIPC() {
 
       // 解压 ZIP（使用 PowerShell 的 Expand-Archive，Windows 自带）
       const psCmd = `Expand-Archive -Path '${zipPath.replace(/'/g, "''")}' -DestinationPath '${targetDir.replace(/'/g, "''")}' -Force`;
-      spawn('powershell', ['-NoProfile', '-Command', psCmd], {
-        stdio: 'inherit',
-        shell: true,
-        windowsHide: true,
-      }).on('close', (code) => {
-        if (code !== 0) {
-          writeLog('main', `[PLUGIN] 解压失败: ${name}, code=${code}`);
-        } else {
-          writeLog('main', `[PLUGIN] 安装成功: ${name}`);
-        }
+      const exitCode = await new Promise((resolve, reject) => {
+        const ps = spawn('powershell', ['-NoProfile', '-Command', psCmd], {
+          stdio: 'inherit',
+          shell: true,
+          windowsHide: true,
+        });
+        ps.on('error', (err) => {
+          writeLog('main', `[PLUGIN] spawn 失败: ${name} - ${err.message}`);
+          reject(err);
+        });
+        ps.on('close', (code) => resolve(code));
       });
 
+      if (exitCode !== 0) {
+        writeLog('main', `[PLUGIN] 解压失败: ${name}, code=${exitCode}`);
+        return { success: false, error: `解压失败 (code=${exitCode})` };
+      }
+
+      writeLog('main', `[PLUGIN] 安装成功: ${name}`);
       return { success: true, path: targetDir };
     } catch (e) {
       writeLog('main', `[PLUGIN] 安装失败: ${name} - ${e.message}`);
@@ -355,14 +384,14 @@ function setupIPC() {
     const exePath = path.join(tmpDir, latest);
 
     writeLog('main', `[UPDATE] Installing ${exePath}`);
-    try {
-      updater.installUpdate(exePath);
-      // 延迟退出，让安装器有机会启动
-      setTimeout(() => app.quit(), 1000);
-      return { success: true };
-    } catch (e) {
-      return { error: e.message };
+    const result = updater.installUpdate(exePath);
+    if (!result.success) {
+      writeLog('main', `[UPDATE] 安装启动失败: ${result.error}`);
+      return { error: result.error };
     }
+    // 延迟退出，让安装器有机会启动
+    setTimeout(() => app.quit(), 1000);
+    return { success: true };
   });
 }
 
