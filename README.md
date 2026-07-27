@@ -1,91 +1,87 @@
-<p align="center">
-  <a href="README.md">English</a> | <a href="README.zh.md">中文</a>
-</p>
-
 # noshRadio
 
-**Multi-source desktop music player** — search, stream, and discover music across multiple providers in one unified interface.
+**多音源聚合桌面音乐播放器** — 在一个统一界面中搜索、播放和发现来自多个音源的音乐。
 
-Built with Tauri (Rust). Features an AI-powered taste system, Bilibili video integration, and plugin support.
+基于 Tauri（Rust）构建。内置 AI 品味系统、Bilibili 视频集成和插件支持。
 
-## Features
+## 功能特性
 
-- **Multi-source search** — aggregate results from multiple music providers
-- **Unified playback** — resolve and play songs regardless of source
-- **AI taste system** — learns your preferences through listening habits
-- **Bilibili integration** — search, play, and browse Bilibili video danmaku
-- **Plugin system** — extend with custom source providers
-- **Cross-source URL resolution** — fallback across providers for better availability
-- **Audio CDN proxy** — handles anti-leech referer headers for reliable streaming
-- **Scan-to-login** — import your playlists via QR code
-- **Auto-updater** — checks GitHub releases for new versions
+- **多音源搜索** — 聚合多个音乐提供商的搜索结果
+- **统一播放** — 无论音源来自哪里，统一解析并播放
+- **AI 品味系统** — 通过听歌习惯学习你的偏好
+- **Bilibili 集成** — 搜索、播放和浏览 B站视频弹幕
+- **插件系统** — 通过自定义音源提供者扩展功能
+- **跨音源解析** — 音源间自动回退，提高可用性
+- **音频 CDN 代理** — 处理防盗链 Referer，确保稳定播放
+- **扫码登录** — 通过二维码导入你的歌单
+- **自动更新** — 检查 GitHub Release 获取新版本
 
-## Tech Stack
+## 技术栈
 
-| Layer | Technology |
-|-------|-----------|
-| Desktop Shell | Tauri (Rust) |
-| Frontend | Vanilla HTML/JS, Wired Elements (hand-drawn UI) |
-| Backend | Node.js HTTP proxy, Express |
-| Build | esbuild, Vite |
-| Audio Proxy | Rust (Tauri) |
-| Dependencies | GSAP (animations), Three.js (visualizations), Protobuf (danmaku) |
+| 层级 | 技术 |
+|------|------|
+| 桌面框架 | Tauri (Rust) |
+| 前端 | 原生 HTML/JS, Wired Elements (手绘风格 UI) |
+| 后端 | Node.js HTTP 代理, Express |
+| 构建工具 | esbuild, Vite |
+| 音频代理 | Rust (Tauri) |
+| 依赖库 | GSAP (动画), Three.js (可视化), Protobuf (弹幕) |
 
-## Getting Started
+## 快速开始
 
-### Prerequisites
+### 环境要求
 
 - Node.js 18+
 - npm
-- Rust toolchain (for Tauri)
+- Rust 工具链（Tauri 需要）
 
-### Install
+### 安装依赖
 
 ```bash
 npm install
 ```
 
-### Run (development)
+### 运行（开发模式）
 
 ```bash
 npm run dev
 ```
 
-### Build
+### 打包
 
 ```bash
 npm run build:tauri
 ```
 
-## Project Structure
+## 项目结构
 
 ```
 noshRadio/
-├── proxy-server.js          # HTTP proxy for API/audio
-├── kugou-provider.js        # Music source provider
-├── kugou-server.js          # Music source server
-├── source-server.js         # Cross-source URL resolver
-├── updater.js               # Auto-update module
-├── dev-server.js            # Dev server (Tauri)
-├── nosh-music-ai.html       # Main frontend
-├── nosh-taste.js            # Taste/profile system
-├── nosh-persist.js          # Data persistence layer
-├── src-tauri/               # Tauri Rust source (audio proxy, config)
+├── proxy-server.js          # HTTP 代理（API/音频）
+├── kugou-provider.js        # 音源提供者
+├── kugou-server.js          # 音源服务
+├── source-server.js         # 跨音源 URL 解析
+├── updater.js               # 自动更新模块
+├── dev-server.js            # 开发服务器（Tauri）
+├── nosh-music-ai.html       # 主前端页面
+├── nosh-taste.js            # 品味系统
+├── nosh-persist.js          # 数据持久化层
+├── src-tauri/               # Tauri Rust 源码（音频代理、配置）
 │   ├── src/
 │   └── tauri.conf.json
-├── web/                     # Frontend output
-├── plugins/                 # Plugin system
-│   └── source-bridge/       # Source plugin bridge
-├── build/                   # Build scripts
-├── lib/                     # Frontend libraries
-├── fonts/                   # UI fonts
-└── scripts/                 # Utility scripts
+├── web/                     # 前端发布目录
+├── plugins/                 # 插件系统
+│   └── source-bridge/       # 音源插件桥接
+├── build/                   # 构建脚本
+├── lib/                     # 前端库
+├── fonts/                   # UI 字体
+└── scripts/                 # 工具脚本
 ```
 
-## Architecture
+## 架构
 
 ```
-Browser/Window
+浏览器/窗口
     │
     ▼
 proxy-server.js (port 8081)
@@ -93,10 +89,10 @@ proxy-server.js (port 8081)
     ├── /netease/*  →  NeteaseCloudMusicApi (port 3000)
     ├── /kugou/*    →  Kugou Server (port 3001)
     ├── /api/bili/* →  Bilibili WBI-signed API
-    ├── /api/audio-proxy  →  CDN audio with Referer headers
-    └── /source/*   →  Plugin source bridge (port 30489)
+    ├── /api/audio-proxy  →  CDN 音频代理（带 Referer 头）
+    └── /source/*   →  插件音源桥接 (port 30489)
 ```
 
-## License
+## 许可证
 
 MIT
