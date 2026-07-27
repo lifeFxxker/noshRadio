@@ -1,0 +1,124 @@
+<p align="center">
+  <a href="README.md">English</a> | <a href="README.zh.md">中文</a>
+</p>
+
+# noshRadio
+
+**多音源聚合桌面音乐播放器** — 在一个统一界面中搜索、播放和发现来自多个音源的音乐。
+
+基于 Electron（Windows 桌面）构建，正在迁移至 Tauri（跨平台）。内置 AI 品味系统、Bilibili 视频集成和插件支持。
+
+## 功能特性
+
+- **多音源搜索** — 聚合多个音乐提供商的搜索结果
+- **统一播放** — 无论音源来自哪里，统一解析并播放
+- **AI 品味系统** — 通过听歌习惯学习你的偏好
+- **Bilibili 集成** — 搜索、播放和浏览 B站视频弹幕
+- **插件系统** — 通过自定义音源提供者扩展功能
+- **跨音源解析** — 音源间自动回退，提高可用性
+- **音频 CDN 代理** — 处理防盗链 Referer，确保稳定播放
+- **扫码登录** — 通过二维码导入你的歌单
+- **自动更新** — 检查 GitHub Release 获取新版本
+
+## 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| 桌面框架 | Electron + Tauri (Rust) |
+| 前端 | 原生 HTML/JS, Wired Elements (手绘风格 UI) |
+| 后端 | Node.js HTTP 代理, Express |
+| 构建工具 | esbuild, Vite |
+| 音频代理 | Rust (Tauri) |
+| 依赖库 | GSAP (动画), Three.js (可视化), Protobuf (弹幕) |
+
+## 快速开始
+
+### 环境要求
+
+- Node.js 18+
+- npm
+
+### 安装依赖
+
+```bash
+npm install
+```
+
+### 运行（Electron）
+
+```bash
+npm run dev:server
+# 然后打开 Electron 或访问 http://localhost:1420
+```
+
+或者直接使用 Electron：
+
+```bash
+npx electron .
+```
+
+### 运行（Tauri — 开发模式）
+
+```bash
+npm run dev
+```
+
+### 打包（Tauri）
+
+```bash
+npm run build:tauri
+```
+
+### 打包（Electron — Windows 安装包）
+
+```bash
+npx electron-builder --win
+```
+
+输出在 `release/` 目录，生成 NSIS 安装包。
+
+## 项目结构
+
+```
+noshRadio/
+├── main.js                  # Electron 主进程
+├── preload.js               # Electron 预加载桥接
+├── proxy-server.js          # HTTP 代理（API/音频）
+├── kugou-provider.js        # 音源提供者
+├── kugou-server.js          # 音源服务
+├── source-server.js         # 跨音源 URL 解析
+├── updater.js               # 自动更新模块
+├── dev-server.js            # Tauri 开发服务器
+├── nosh-music-ai.html       # 主前端页面
+├── nosh-taste.js            # 品味系统
+├── nosh-persist.js          # 数据持久化层
+├── src-tauri/               # Tauri Rust 源码
+│   ├── src/
+│   └── tauri.conf.json
+├── web/                     # Tauri 前端发布目录
+├── plugins/                 # 插件系统
+│   └── source-bridge/       # 音源插件桥接
+├── build/                   # 构建脚本
+├── lib/                     # 前端库
+├── fonts/                   # UI 字体
+└── scripts/                 # 工具脚本
+```
+
+## 架构
+
+```
+浏览器/窗口
+    │
+    ▼
+proxy-server.js (port 8081)
+    │
+    ├── /netease/*  →  NeteaseCloudMusicApi (port 3000)
+    ├── /kugou/*    →  Kugou Server (port 3001)
+    ├── /api/bili/* →  Bilibili WBI-signed API
+    ├── /api/audio-proxy  →  CDN 音频代理（带 Referer 头）
+    └── /source/*   →  插件音源桥接 (port 30489)
+```
+
+## 许可证
+
+MIT

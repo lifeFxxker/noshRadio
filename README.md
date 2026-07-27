@@ -1,3 +1,7 @@
+<p align="center">
+  <a href="README.md">English</a> | <a href="README.zh.md">中文</a>
+</p>
+
 # noshRadio
 
 **Multi-source desktop music player** — search, stream, and discover music across multiple providers in one unified interface.
