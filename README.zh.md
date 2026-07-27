@@ -6,7 +6,7 @@
 
 **多音源聚合桌面音乐播放器** — 在一个统一界面中搜索、播放和发现来自多个音源的音乐。
 
-基于 Electron（Windows 桌面）构建，正在迁移至 Tauri（跨平台）。内置 AI 品味系统、Bilibili 视频集成和插件支持。
+基于 Tauri（Rust）构建。内置 AI 品味系统、Bilibili 视频集成和插件支持。
 
 ## 功能特性
 
@@ -24,7 +24,7 @@
 
 | 层级 | 技术 |
 |------|------|
-| 桌面框架 | Electron + Tauri (Rust) |
+| 桌面框架 | Tauri (Rust) |
 | 前端 | 原生 HTML/JS, Wired Elements (手绘风格 UI) |
 | 后端 | Node.js HTTP 代理, Express |
 | 构建工具 | esbuild, Vite |
@@ -37,6 +37,7 @@
 
 - Node.js 18+
 - npm
+- Rust 工具链（Tauri 需要）
 
 ### 安装依赖
 
@@ -44,58 +45,35 @@
 npm install
 ```
 
-### 运行（Electron）
-
-```bash
-npm run dev:server
-# 然后打开 Electron 或访问 http://localhost:1420
-```
-
-或者直接使用 Electron：
-
-```bash
-npx electron .
-```
-
-### 运行（Tauri — 开发模式）
+### 运行（开发模式）
 
 ```bash
 npm run dev
 ```
 
-### 打包（Tauri）
+### 打包
 
 ```bash
 npm run build:tauri
 ```
 
-### 打包（Electron — Windows 安装包）
-
-```bash
-npx electron-builder --win
-```
-
-输出在 `release/` 目录，生成 NSIS 安装包。
-
 ## 项目结构
 
 ```
 noshRadio/
-├── main.js                  # Electron 主进程
-├── preload.js               # Electron 预加载桥接
 ├── proxy-server.js          # HTTP 代理（API/音频）
 ├── kugou-provider.js        # 音源提供者
 ├── kugou-server.js          # 音源服务
 ├── source-server.js         # 跨音源 URL 解析
 ├── updater.js               # 自动更新模块
-├── dev-server.js            # Tauri 开发服务器
+├── dev-server.js            # 开发服务器（Tauri）
 ├── nosh-music-ai.html       # 主前端页面
 ├── nosh-taste.js            # 品味系统
 ├── nosh-persist.js          # 数据持久化层
-├── src-tauri/               # Tauri Rust 源码
+├── src-tauri/               # Tauri Rust 源码（音频代理、配置）
 │   ├── src/
 │   └── tauri.conf.json
-├── web/                     # Tauri 前端发布目录
+├── web/                     # 前端发布目录
 ├── plugins/                 # 插件系统
 │   └── source-bridge/       # 音源插件桥接
 ├── build/                   # 构建脚本

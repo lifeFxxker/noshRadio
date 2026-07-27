@@ -6,7 +6,7 @@
 
 **Multi-source desktop music player** — search, stream, and discover music across multiple providers in one unified interface.
 
-Built with Electron (Windows desktop) and migrating to Tauri (cross-platform). Features an AI-powered taste system, Bilibili video integration, and plugin support.
+Built with Tauri (Rust). Features an AI-powered taste system, Bilibili video integration, and plugin support.
 
 ## Features
 
@@ -24,7 +24,7 @@ Built with Electron (Windows desktop) and migrating to Tauri (cross-platform). F
 
 | Layer | Technology |
 |-------|-----------|
-| Desktop Shell | Electron + Tauri (Rust) |
+| Desktop Shell | Tauri (Rust) |
 | Frontend | Vanilla HTML/JS, Wired Elements (hand-drawn UI) |
 | Backend | Node.js HTTP proxy, Express |
 | Build | esbuild, Vite |
@@ -37,6 +37,7 @@ Built with Electron (Windows desktop) and migrating to Tauri (cross-platform). F
 
 - Node.js 18+
 - npm
+- Rust toolchain (for Tauri)
 
 ### Install
 
@@ -44,26 +45,13 @@ Built with Electron (Windows desktop) and migrating to Tauri (cross-platform). F
 npm install
 ```
 
-### Run (Electron)
-
-```bash
-npm run dev:server
-# Then open Electron or navigate to http://localhost:1420
-```
-
-Or use Electron directly:
-
-```bash
-npx electron .
-```
-
-### Run (Tauri — development)
+### Run (development)
 
 ```bash
 npm run dev
 ```
 
-### Build (Tauri)
+### Build
 
 ```bash
 npm run build:tauri
@@ -73,21 +61,19 @@ npm run build:tauri
 
 ```
 noshRadio/
-├── main.js                  # Electron main process
-├── preload.js               # Electron preload bridge
 ├── proxy-server.js          # HTTP proxy for API/audio
 ├── kugou-provider.js        # Music source provider
 ├── kugou-server.js          # Music source server
 ├── source-server.js         # Cross-source URL resolver
 ├── updater.js               # Auto-update module
-├── dev-server.js            # Tauri dev server
+├── dev-server.js            # Dev server (Tauri)
 ├── nosh-music-ai.html       # Main frontend
 ├── nosh-taste.js            # Taste/profile system
 ├── nosh-persist.js          # Data persistence layer
-├── src-tauri/               # Tauri Rust source
+├── src-tauri/               # Tauri Rust source (audio proxy, config)
 │   ├── src/
 │   └── tauri.conf.json
-├── web/                     # Tauri frontend dist
+├── web/                     # Frontend output
 ├── plugins/                 # Plugin system
 │   └── source-bridge/       # Source plugin bridge
 ├── build/                   # Build scripts
