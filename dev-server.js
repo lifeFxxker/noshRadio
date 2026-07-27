@@ -7,10 +7,23 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 
 const PORT = 1420;
 const ROOT = __dirname;
+
+// ─── 确保 build/bundled/ 存在（Rust spawn_service 依赖） ──
+const BUNDLE_DIR = path.join(ROOT, 'build', 'bundled');
+if (!fs.existsSync(BUNDLE_DIR)) {
+  console.log('[dev-server] build/bundled/ 不存在，运行 build-services.js...');
+  try {
+    execSync('node scripts/build-services.js', { cwd: ROOT, stdio: 'inherit' });
+    console.log('[dev-server] build-services.js 完成');
+  } catch (e) {
+    console.error('[dev-server] build-services.js 失败:', e.message);
+    console.error('[dev-server] netease/kugou 服务将不可用');
+  }
+}
 
 // ─── 后端服务管理 ────────────────────────────────────────
 const SERVICES = [
