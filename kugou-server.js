@@ -157,7 +157,7 @@ app.get('/sources', (req, res) => {
   res.json({
     code: 200,
     sources: [
-      { id: 'kugou', name: '酷狗音乐', supportSearch: true, supportPlaylist: true }
+      { id: 'kugou', name: 'KuGou Music', supportSearch: true, supportPlaylist: true }
     ]
   });
 });

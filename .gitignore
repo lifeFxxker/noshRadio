@@ -6,3 +6,12 @@ dist/
 .idea/
 __pycache__/
 *.log
+*.sqlite
+.backup-*/
+__tests__/
+.sisyphus/
+.playwright-mcp/
+build/bundled/
+src-tauri/target/
+docs/
+reactbits-studio.md

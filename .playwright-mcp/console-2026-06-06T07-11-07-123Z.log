@@ -1,4 +1,0 @@
-[   43277ms] [LOG] [daily] 新的一天, _isNewDay=true @ http://localhost:3001/nosh-music-ai.html:6489
-[   43309ms] [LOG] [initPlaylist] 用户未完成品味设置，跳过自动推荐 @ http://localhost:3001/nosh-music-ai.html:5331
-[   43378ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:3001/nosh-album-cover.jpg:0
-[   43399ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:3001/nosh-album-cover.jpg:0

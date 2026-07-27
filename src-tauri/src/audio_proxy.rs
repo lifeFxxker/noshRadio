@@ -19,6 +19,7 @@ pub struct ProxyParams {
 /// 通过 reqwest 转发 HTTP 请求（保留原始响应头和 body）
 async fn handle_proxy(
     Query(params): Query<ProxyParams>,
+    headers: HeaderMap,
 ) -> Result<Response<Body>, (StatusCode, String)> {
     let url = &params.url;
 
@@ -38,17 +39,18 @@ async fn handle_proxy(
             )
         })?;
 
-    let resp = client
-        .get(url)
-        .header("Referer", "https://music.163.com/")
-        .send()
-        .await
-        .map_err(|e| {
-            (
-                StatusCode::BAD_GATEWAY,
-                format!("请求目标失败: {}", e),
-            )
-        })?;
+    // 转发浏览器请求的 Range header（音频播放必需，CDN 防盗链检查）
+    let mut req_builder = client.get(url).header("Referer", "https://music.163.com/");
+    if let Some(range) = headers.get("range") {
+        req_builder = req_builder.header("range", range);
+    }
+
+    let resp = req_builder.send().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("请求目标失败: {}", e),
+        )
+    })?;
 
     let status = resp.status();
     let headers = resp.headers().clone();

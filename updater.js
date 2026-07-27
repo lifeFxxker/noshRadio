@@ -1,5 +1,5 @@
 /**
- * noshRadio — Gitee Release 自动升级模块
+ * noshRadio — GitHub Release 自动升级模块
  *
  * 职责：检查新版本 → 下载安装包 → 静默安装
  * 不依赖任何第三方包，仅用 Node.js 内置模块。
@@ -10,13 +10,21 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 
-// ─── 配置（与 package.json 中的 update 字段对应）──────────────
+// ─── 配置 ──────────────────────────────────────────────────────
 function getConfig() {
   try {
     return require(path.join(__dirname, 'package.json')).update;
   } catch {
-    return { giteeOwner: 'yangshengzhe', giteeRepo: 'nosh-radio' };
+    return {};
   }
+}
+
+function getGitHubConfig() {
+  const cfg = getConfig();
+  return {
+    owner: cfg.githubOwner || 'lifeFxxker',
+    repo: cfg.githubRepo || 'noshRadio',
+  };
 }
 
 // ─── semver 比较（只比较三位数，忽略 prerelease）─────────────
@@ -32,15 +40,18 @@ function compareVersions(a, b) {
   return 0;
 }
 
-// ─── Gitee API v5：获取最新 Release ──────────────────────────
+// ─── GitHub API：获取最新 Release ────────────────────────────
 function fetchLatestRelease() {
   return new Promise((resolve, reject) => {
-    const cfg = getConfig();
-    const url = `https://gitee.com/api/v5/repos/${cfg.giteeOwner}/${cfg.giteeRepo}/releases/latest`;
+    const { owner, repo } = getGitHubConfig();
+    const url = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
 
-    https.get(url, { timeout: 10000 }, (res) => {
+    https.get(url, {
+      timeout: 10000,
+      headers: { 'User-Agent': 'noshRadio/1.0', 'Accept': 'application/vnd.github.v3+json' },
+    }, (res) => {
       if (res.statusCode !== 200) {
-        reject(new Error(`Gitee API 返回 ${res.statusCode}`));
+        reject(new Error(`GitHub API 返回 ${res.statusCode}`));
         return;
       }
       let body = '';
@@ -117,10 +128,8 @@ function downloadUpdate(updateInfo, onProgress) {
   const tmpDir = process.env.TEMP || '.';
   const destPath = path.join(tmpDir, `noshRadio-update-${updateInfo.version}.exe`);
 
-  // Gitee 的 browser_download_url 可能是一个相对路径，需补全域名
-  let url = updateInfo.downloadUrl.startsWith('http')
-    ? updateInfo.downloadUrl
-    : `https://gitee.com${updateInfo.downloadUrl}`;
+  // GitHub 的 browser_download_url 是完整 URL
+  let url = updateInfo.downloadUrl;
 
   return downloadWithRedirects(url, destPath, onProgress, 5);
 }

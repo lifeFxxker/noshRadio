@@ -1,6 +1,6 @@
 /**
  * Kugou Provider - 基于 Listen1 架构
- * 支持搜索和播放酷狗音乐
+ * 支持搜索和播放 KuGou 音乐
  *
  * API来源: Listen1 Chrome Extension (kugou.js)
  * https://github.com/listen1/listen1_chrome_extension
@@ -13,7 +13,7 @@ class KugouProvider {
   static get meta() {
     return {
       id: 'kugou',
-      name: '酷狗音乐',
+      name: 'KuGou Music',
       supportPlayback: true,
       supportSearch: true,
       supportPlaylist: true
