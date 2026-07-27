@@ -5498,7 +5498,19 @@ function setLoginTip(msg, type = '') {
   tip.textContent = msg || '';
   tip.className = 'login-tip' + (type ? ' ' + type : '');
 }
-function logout(platform = 'all') {}
+function logout(platform = 'all') {
+  // 清除所有已保存的歌单（本地缓存）
+  try {
+    localStorage.removeItem('noshSavedPlaylists');
+    console.log('[logout] 已清除本地缓存的导入歌单');
+  } catch (e) {}
+  // 清除登录状态（cookie 等）
+  logoutNetease();
+  // 刷新歌单 UI
+  if (typeof renderPlaylist === 'function') renderPlaylist();
+  if (typeof updateLoginUI === 'function') updateLoginUI();
+  console.log('[logout] 已清除所有登录数据');
+}
 
 // ===== 网易云扫码登录 =====
 let neteaseQrPollTimer = null;
@@ -6133,7 +6145,7 @@ function logoutNetease() {
 
 // ===== 登录弹窗事件 =====
 if (loginBtn) {
-  loginBtn.addEventListener('click', showLoginModal);
+  loginBtn.addEventListener('click', function() { if (neteaseLoginState.isLoggedIn || neteaseLoginState.imported) { if (confirm('\u786e\u5b9a\u9000\u51fa\u767b\u5f55\u5417\uff1f\u5c06\u6e05\u9664\u7f13\u5b58\u7684\u6b4c\u5355\u6570\u636e\u3002')) { logout(); } } else { showLoginModal(); } });
 }
 
 if (loginModalClose) {
