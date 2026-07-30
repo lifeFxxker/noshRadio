@@ -1,4 +1,4 @@
-<img width="1419" height="858" alt="image" src="https://github.com/user-attachments/assets/5d22cd9a-138e-4f52-9d45-dbf603ecc183" /># noshRadio
+# noshRadio
 
 **多音源聚合桌面音乐播放器** — 在一个统一界面中搜索、播放和发现来自多个音源的音乐。
 
