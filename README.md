@@ -4,8 +4,11 @@
 
 基于 Tauri（Rust）构建。内置 AI 品味系统、Bilibili 视频集成和插件支持。
 <img width="450" height="230" alt="image" src="https://github.com/user-attachments/assets/5762cc6a-f360-4e2c-aa32-6b8905c90b48" />
-<img width="1399" height="847" alt="image" src="https://github.com/user-attachments/assets/f6748583-5c6f-40ae-aeda-2fa2ed368fb8" />
-<img width="1400" height="849" alt="image" src="https://github.com/user-attachments/assets/6a817a4d-3efe-4c53-bf40-79af2f3432b3" />
+<img width="450" height="230" alt="image" src="https://github.com/user-attachments/assets/f6748583-5c6f-40ae-aeda-2fa2ed368fb8" />
+<img width="450" height="230" alt="image" src="https://github.com/user-attachments/assets/6a817a4d-3efe-4c53-bf40-79af2f3432b3" />
+<img width="450" height="230" alt="42baf9c1-1233-4291-9762-a547c6befd22" src="https://github.com/user-attachments/assets/8a1f15b6-83b2-4d61-bfc3-ce6976b030f5" />
+<img width="450" height="230" alt="image" src="https://github.com/user-attachments/assets/a4151f8e-926e-47db-9cf4-3624b5a96953" />
+<img width="420" height="150" alt="image" src="https://github.com/user-attachments/assets/0cb48675-d09a-42f0-a8fb-cc4a858071cb" />
 
 ## 功能特性
 
