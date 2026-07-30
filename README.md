@@ -3,6 +3,7 @@
 **多音源聚合桌面音乐播放器** — 在一个统一界面中搜索、播放和发现来自多个音源的音乐。
 
 基于 Tauri（Rust）构建。内置 AI 品味系统、Bilibili 视频集成和插件支持。
+
 <img width="450" height="230" alt="image" src="https://github.com/user-attachments/assets/5762cc6a-f360-4e2c-aa32-6b8905c90b48" />
 <img width="450" height="230" alt="image" src="https://github.com/user-attachments/assets/f6748583-5c6f-40ae-aeda-2fa2ed368fb8" />
 <img width="450" height="230" alt="image" src="https://github.com/user-attachments/assets/6a817a4d-3efe-4c53-bf40-79af2f3432b3" />
