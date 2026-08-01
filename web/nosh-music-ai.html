@@ -8862,9 +8862,14 @@ let conversationHistory = [
 ];
 
 async function sendToAI(userMessage) {
-  // 添加心情偏好到用户消息中
-  const moodContext = getMoodContext();
-  const tasteContext = buildTasteContext();
+  // 添加心情偏好到用户消息中（上下文构建失败不应阻断 AI 请求）
+  let moodContext = '', tasteContext = '';
+  try {
+    moodContext = getMoodContext();
+    tasteContext = buildTasteContext();
+  } catch (e) {
+    console.warn('nosh: 构建品味上下文失败', e);
+  }
   let fullMessage = userMessage;
   if (tasteContext) fullMessage = `${tasteContext}\n\n${fullMessage}`;
   if (moodContext) fullMessage = `${moodContext}${fullMessage}`;
@@ -9727,8 +9732,9 @@ async function initPlaylist() {
   chatMessages.appendChild(genMsg);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
-  // 构建品味上下文
-  const tasteContext = buildTasteContext();
+  // 构建品味上下文（失败不阻断自动推荐流程）
+  let tasteContext = '';
+  try { tasteContext = buildTasteContext(); } catch (e) { console.warn('nosh: 构建品味上下文失败', e); }
 
   // 添加打字动画
   document.querySelectorAll('.chat-avatar').forEach(el => el.classList.add('thinking'));
@@ -10011,7 +10017,9 @@ async function getAlternativeSongs(artist) {
 const excludePatterns = [
   'cover', '翻唱', 'remix', 'live', 'acoustic', 'live版', '现场',
   'demo', '片段', '铃声', '纯音乐', '伴奏', 'instrumental',
-  'ktv', '网友改编'
+  'ktv', '网友改编',
+  // 翻唱/重制/卡拉OK 变体标记（Made Popular By / Karaoke / Vocal Version 等）
+  'made popular by', 'karaoke', 'vocal version', 'jersey club', 'piano version', 'cover version'
 ];
 
 // ===== 多源搜索结果选择UI =====
@@ -10329,7 +10337,9 @@ async function searchAndPlay(songName, artist, options = {}) {
   const addToPlaylist = options.addToPlaylist || false;
   const noPlay = options.noPlay || false;
   const searchOnly = options.searchOnly || false;
-  const keyword = artist ? `${songName} ${artist}` : songName;
+  // 净化歌手名用于搜索：AI 可能传多歌手（"Eminem,Rihanna" / "Daniel Caesar,Jaden"），只取第一个避免逗号污染 query
+  const searchArtist = (artist || '').split(/,|&|feat\.|ft\.|featuring/)[0].trim();
+  const keyword = searchArtist ? `${songName} ${searchArtist}` : songName;
   statusText.textContent = `搜索: ${songName}`;
 
   const allResults = []; // 最终可播放结果
@@ -10374,11 +10384,11 @@ async function searchAndPlay(songName, artist, options = {}) {
 
     // ==================== 网易云搜索（仅本地API）====================
   async function searchNeteaseInto(songMap) {
-    // 构建多个搜索关键词组合
+    // 构建多个搜索关键词组合（用净化后的歌手名，避免多歌手逗号污染 query）
     const searchQueries = [];
-    if (songName && artist) {
-      searchQueries.push(`${songName} ${artist}`);
-      searchQueries.push(`${artist} ${songName}`);
+    if (songName && searchArtist) {
+      searchQueries.push(`${songName} ${searchArtist}`);
+      searchQueries.push(`${searchArtist} ${songName}`);
       searchQueries.push(songName);
     } else if (songName) {
       searchQueries.push(songName);
@@ -10580,6 +10590,15 @@ async function searchAndPlay(songName, artist, options = {}) {
     if (b.score !== a.score) return b.score - a.score;
     return (b.song._source === 'kugou' ? 0 : 1) - (a.song._source === 'kugou' ? 0 : 1);
   });
+
+  // 低质量兜底：只搜到翻唱/无关歌曲（最高分<0 或全部被过滤）且带歌手名时，去掉歌手名重试
+  if (!options.skippedArtistFallback && artist) {
+    const topScore = scoredSongs.length > 0 ? scoredSongs[0].score : Number.NEGATIVE_INFINITY;
+    if (scoredSongs.length === 0 || topScore < 0) {
+      console.log(`[search] 结果质量过低（有效${validSongs.length}首，最高分${scoredSongs.length > 0 ? topScore : '无'}），尝试仅按歌名搜索: "${songName}"`);
+      return searchAndPlay(songName, '', { ...options, skippedArtistFallback: true });
+    }
+  }
 
   console.log(`[search] 有效歌曲${validSongs.length}首，评分后排序（前5）:`);
   scoredSongs.slice(0, 5).forEach(item => {
@@ -11009,7 +11028,8 @@ function buildTasteContext() {
     if (!dedupSet.has(key)) { dedupSet.add(key); recents.push(r); }
   }
   // 再补持久化推荐历史（去重）
-  for (const r of _recentRecommendations) {
+  const recentRecs = Array.isArray(_recentRecommendations) ? _recentRecommendations : [];
+  for (const r of recentRecs) {
     const key = `${r.name}|${r.artist}`;
     if (!dedupSet.has(key)) { dedupSet.add(key); recents.push(r); }
   }
@@ -11070,7 +11090,9 @@ function addSessionRecommended(songs) {
 function loadRecentRecommendations() {
   try {
     const data = localStorage.getItem('noshRecentRecs');
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (e) { return []; }
 }
 function saveRecentRecommendations() {
@@ -11377,8 +11399,13 @@ function onRealtimeSend() {
 }
 
 async function realtimeSendToAI(userText, onDone) {
-  const mood = getMoodContext();
-  const taste = buildTasteContext();
+  let mood = '', taste = '';
+  try {
+    mood = getMoodContext();
+    taste = buildTasteContext();
+  } catch (e) {
+    console.warn('nosh: 构建品味上下文失败', e);
+  }
   let msg = userText;
   if (taste) msg = `${taste}\n\n${msg}`;
   if (mood) msg = `${mood}${msg}`;
@@ -13930,7 +13957,10 @@ const WebGLFluid = {
    * 即使 displayMat 尚未就绪，也会存储 pending 颜色，待 start() 时应用
    */
   _pendingFogColor: null,
+  // 最近一次封面颜色（stop→start 会重建 displayMat 默认色，用它重放恢复）
+  _lastFogColor: null,
   setFogColor(r, g, b) {
+    this._lastFogColor = [r, g, b];
     // 计算目标调色板
     const t0 = new Float32Array(3);
     const t1 = new Float32Array(3);
@@ -14033,6 +14063,11 @@ const WebGLFluid = {
     if (!this.gl) { console.warn('[WebGLFluid] start: no gl'); return; }
     if (!this.fluidProgram) this.initGL();
     if (!this.fluidProgram) { console.warn('[WebGLFluid] start: initGL failed'); return; }
+    // 重新应用最近一次的封面颜色：stop() 删除资源后 initGL() 会重建为默认蓝色
+    if (this._lastFogColor) {
+      var lc = this._lastFogColor;
+      this.setFogColor(lc[0], lc[1], lc[2]);
+    }
     this.isActive = true;
     this.canvas.style.display = 'block';
     this.startTime = performance.now();
@@ -14163,16 +14198,29 @@ function updateFogFromCover(imgSrc) {
   img.crossOrigin = 'anonymous';
   img.onload = () => {
     const c = document.createElement('canvas');
-    c.width = 1; c.height = 1;
+    c.width = 16; c.height = 16;
     const ctx = c.getContext('2d');
     try {
-      ctx.drawImage(img, 0, 0, 1, 1);
-      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-      const rf = r / 255, gf = g / 255, bf = b / 255;
-      console.log('[bg] extracted color:', r, g, b);
-      WebGLFluid.setFogColor(rf, gf, bf);
-      if (LiquidChromeBg.setColor) LiquidChromeBg.setColor(rf, gf, bf);
-      if (LiquidEtherBg.setColor) LiquidEtherBg.setColor(rf, gf, bf);
+      ctx.drawImage(img, 0, 0, 16, 16);
+      const data = ctx.getImageData(0, 0, 16, 16).data;
+      // 三分桶提取：平均色(雾气) / 暗色(液体防过曝) / 亮色(liquid2 提亮)
+      let sumR=0, sumG=0, sumB=0, n=0;
+      let darkR=0, darkG=0, darkB=0, nDark=0;
+      let brightR=0, brightG=0, brightB=0, nBright=0;
+      for (let i=0; i<data.length; i+=4) {
+        const r=data[i], g=data[i+1], b=data[i+2];
+        const lum = 0.299*r + 0.587*g + 0.114*b;
+        sumR+=r; sumG+=g; sumB+=b; n++;
+        if (lum < 110) { darkR+=r; darkG+=g; darkB+=b; nDark++; }
+        else if (lum > 160) { brightR+=r; brightG+=g; brightB+=b; nBright++; }
+      }
+      const avg = n ? [sumR/n/255, sumG/n/255, sumB/n/255] : [0,0,0];
+      const dark = nDark ? [darkR/nDark/255, darkG/nDark/255, darkB/nDark/255] : avg;
+      const bright = nBright ? [brightR/nBright/255, brightG/nBright/255, brightB/nBright/255] : avg;
+      console.log('[bg] extracted avg:', avg.map(v=>Math.round(v*255)), 'dark:', dark.map(v=>Math.round(v*255)), 'bright:', bright.map(v=>Math.round(v*255)));
+      WebGLFluid.setFogColor(avg[0], avg[1], avg[2]);
+      if (LiquidChromeBg.setColor) LiquidChromeBg.setColor(dark[0], dark[1], dark[2]);
+      if (LiquidEtherBg.setColor) LiquidEtherBg.setColor(bright[0], bright[1], bright[2]);
     } catch (e) {
       console.log('[bg] getImageData CORS error:', e.message);
       WebGLFluid.resetFogColor();
@@ -14341,6 +14389,7 @@ const LiquidChromeBg = {
   canvas: null, renderer: null, scene: null, camera: null, mesh: null,
   animId: null, isActive: false, uniforms: null,
   speed: 0.2, amplitude: 0.3, frequencyX: 3, frequencyY: 3,
+  _dlMode: false, // 桌面歌词模式：降低亮色流体占比，避免遮挡歌词
   _targetColor: null, _sourceColor: null, _transitionStart: 0, _transitionDuration: 2500,
   init() {
     if (this.renderer) return;
@@ -14419,6 +14468,8 @@ const LiquidChromeBg = {
     this.resize();
     // 鼠标交互（用 document 监听，因为 canvas 有 pointer-events:none）
     const onMove = (e) => {
+      // DL 模式：完全忽略鼠标交互（避免流体被鼠标拖动，遮挡歌词）
+      if (this._dlMode) return;
       this.uniforms.uMouse.value.set(e.clientX / window.innerWidth, 1 - e.clientY / window.innerHeight);
     };
     document.addEventListener('mousemove', onMove);
@@ -14435,6 +14486,8 @@ const LiquidChromeBg = {
     if (!this.renderer) { console.warn('[LiquidChromeBg] init failed — skipping'); return; }
     this.isActive = true;
     this._startTime = performance.now();
+    // DL 模式降低扭曲幅度 → 亮色流体变少，歌词可读性更好
+    this.uniforms.uAmplitude.value = this._dlMode ? 0.12 : this.amplitude;
     if (this.canvas) this.canvas.style.display = 'block';
     if (!this.animId) this.animate();
   },
@@ -14472,8 +14525,14 @@ const LiquidChromeBg = {
   },
   setColor(r, g, b) {
     if (!this.uniforms) return;
+    // 防过曝：限制亮度 ≤0.55（保留封面色彩倾向，取暗色主色观感）
+    var c = new THREE.Color(r, g, b);
+    var hsl = { h: 0, s: 0, l: 0 };
+    c.getHSL(hsl);
+    if (hsl.l > 0.55) hsl.l = 0.55;
+    c.setHSL(hsl.h, hsl.s, hsl.l);
     this._sourceColor = this.uniforms.uBaseColor.value.clone();
-    this._targetColor = new THREE.Vector3(r, g, b);
+    this._targetColor = new THREE.Vector3(c.r, c.g, c.b);
     this._transitionStart = performance.now();
   },
   resetColor() {
@@ -14678,10 +14737,11 @@ var _LE_COLOR_FRAG =
 'uniform sampler2D velocity;'+
 'uniform sampler2D palette;'+
 'uniform vec4 bgColor;'+
+'uniform float uFlowScale;'+
 'varying vec2 uv;'+
 'void main(){'+
 'vec2 vel=texture2D(velocity,uv).xy;'+
-'float lenv=clamp(length(vel)*3.0,0.0,1.0);'+
+'float lenv=clamp(length(vel)*3.0*uFlowScale,0.0,1.0);'+
 'vec3 c=texture2D(palette,vec2(lenv,0.5)).rgb;'+
 'vec3 outRGB=mix(bgColor.rgb,c,lenv);'+
 'gl_FragColor=vec4(outRGB,1.0);'+
@@ -14696,6 +14756,7 @@ const LiquidEtherBg = {
   _mouse:null, _autoDriver:null, _lastInteraction:0,
   _width:0, _height:0,
   _colors:['#2A0A5E','#6B21C8','#D946EF','#FFB0FF'],
+  _dlMode: false, // 桌面歌词模式：降低流体混入占比，避免遮挡歌词
 
   init() {
     if (this.renderer) return;
@@ -14815,7 +14876,8 @@ const LiquidEtherBg = {
         velocity:{value:vel0.texture},
         boundarySpace:{value:new THREE.Vector2()},
         palette:{value:this.paletteTex},
-        bgColor:{value:new THREE.Vector4(0.03,0.03,0.06,0.0)}
+        bgColor:{value:new THREE.Vector4(0.03,0.03,0.06,0.0)},
+        uFlowScale:{value:1.0}
       }
     });
     var outMesh = new THREE.Mesh(new THREE.PlaneGeometry(2,2), outMat);
@@ -14863,6 +14925,8 @@ const LiquidEtherBg = {
 
     // events
     this._onMouseMove = function(e) {
+      // DL 模式：完全忽略鼠标交互（避免流体被鼠标拖动，遮挡歌词）
+      if (_this._dlMode) return;
       mouse.ox=mouse.x; mouse.oy=mouse.y;
       var rect=_this.canvas.getBoundingClientRect();
       mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
@@ -14892,6 +14956,10 @@ const LiquidEtherBg = {
     this.paletteTex.magFilter = this.paletteTex.minFilter = THREE.LinearFilter;
     this.paletteTex.wrapS = this.paletteTex.wrapT = THREE.ClampToEdgeWrapping;
     this.paletteTex.needsUpdate = true;
+    // ★ 关键修复：更新输出材质的 palette uniform 引用，否则 shader 一直采样旧纹理 → 封面颜色不生效
+    if (this._outputMesh && this._outputMesh.material && this._outputMesh.material.uniforms && this._outputMesh.material.uniforms.palette) {
+      this._outputMesh.material.uniforms.palette.value = this.paletteTex;
+    }
   },
 
   _resize() {
@@ -14930,7 +14998,8 @@ const LiquidEtherBg = {
     if (!this.canvas || this.canvas.style.display === 'none' || !document.body.contains(this.canvas)) return;
 
     // ---- auto driver ----
-    if (auto.enabled) {
+    // DL 模式禁用：鼠标被忽略后 mouse.inside 恒 false，否则 3s 后 auto 会接管持续制造流动
+    if (auto.enabled && !this._dlMode) {
       var now = performance.now();
       var idle = now - this._lastInteraction;
       if (idle >= auto.resumeDelay && !mouse.inside) {
@@ -14968,8 +15037,8 @@ const LiquidEtherBg = {
     }
 
     // 必须时刻有速度，否则压力求解器会清零
-    // 当没有任何输入时，用微小随机力维持流动
-    if (!mouse.moved && !mouse.inside && !auto.active) {
+    // 当没有任何输入时，用微小随机力维持流动（DL 模式完全静默，避免干扰歌词阅读）
+    if (!mouse.moved && !mouse.inside && !auto.active && !this._dlMode) {
       mouse.dx = (Math.random()-0.5)*0.2;
       mouse.dy = (Math.random()-0.5)*0.2;
     }
@@ -14983,7 +15052,9 @@ const LiquidEtherBg = {
 
     // ---- 2. external force → vel1 ----
     var f = sim.forceMat.uniforms;
-    f.force.value.set((mouse.dx/2)*sim.opt.mouse_force, (mouse.dy/2)*sim.opt.mouse_force);
+    // DL 模式：鼠标力降至 15%（主页 mouse_force=25 → 等效 3.75），避免移动鼠标就全屏覆盖
+    var fMul = this._dlMode ? 0.15 : 1.0;
+    f.force.value.set((mouse.dx/2)*sim.opt.mouse_force*fMul, (mouse.dy/2)*sim.opt.mouse_force*fMul);
     var cs = sim.opt.cursor_size;
     var cx = Math.min(Math.max(mouse.x, -1+cs*sim.pix.x+sim.pix.x*2), 1-cs*sim.pix.x-sim.pix.x*2);
     var cy = Math.min(Math.max(mouse.y, -1+cs*sim.pix.y+sim.pix.y*2), 1-cs*sim.pix.y-sim.pix.y*2);
@@ -15041,8 +15112,14 @@ const LiquidEtherBg = {
       this.canvas.style.display = 'block';
       this._resize();  // 确保视图尺寸正确（display:none→block 后可能失效）
     }
+    // DL 模式降低流体混入占比（uFlowScale 作用于 lenv 增益）→ 歌词更清晰
+    if (this._outputMesh && this._outputMesh.material && this._outputMesh.material.uniforms && this._outputMesh.material.uniforms.uFlowScale) {
+      this._outputMesh.material.uniforms.uFlowScale.value = this._dlMode ? 0.25 : 1.0;
+    }
     var _this = this;
     var sim = this._sim, auto = this._autoDriver;
+    // DL 模式：初始涡旋力降级（主页 2.0 → DL 0.6），避免启动即满流速
+    var _fScale = this._dlMode ? 0.6 : 2.0;
 
     // 注入强旋转力（散度≈0，压力求解器不会消掉）
     if (sim) {
@@ -15051,11 +15128,11 @@ const LiquidEtherBg = {
       _this.renderer.clear();
       var f = sim.forceMat.uniforms;
       f.scale.value.set(150, 150);
-      // 2个涡旋注入初始流动（原4个，减少GPU预热负载）
-      f.force.value.set(0, 2.0); f.center.value.set(0.2, 0);
+      // 2个涡旋注入初始流动（原4个，减少GPU预热负载）；DL 模式用 _fScale=0.6
+      f.force.value.set(0, _fScale); f.center.value.set(0.2, 0);
       _this.renderer.setRenderTarget(sim.vel0);
       _this.renderer.render(sim.forceScene, sim.forceCam);
-      f.force.value.set(0, -2.0); f.center.value.set(-0.2, 0);
+      f.force.value.set(0, -_fScale); f.center.value.set(-0.2, 0);
       _this.renderer.render(sim.forceScene, sim.forceCam);
       _this.renderer.setRenderTarget(null);
     }
@@ -15094,9 +15171,17 @@ const LiquidEtherBg = {
   },
 
   setColor(r,g,b) {
-    var cols = this._colors.slice();
+    // 生成同色系 4 阶渐变（暗→亮）：liquid2 充分体现封面主色且整体偏亮
     var c = new THREE.Color(r,g,b);
-    cols[0] = '#'+c.getHexString();
+    var hsl = {h:0, s:0, l:0};
+    c.getHSL(hsl);
+    // 保底提亮：亮度从 0.55 起跳，暗色封面也能呈现亮色主色
+    var ls = [0.55, 0.68, 0.82, 0.95];
+    var cols = ls.map(function(l) {
+      var cc = new THREE.Color();
+      cc.setHSL(hsl.h, hsl.s, l);
+      return '#'+cc.getHexString();
+    });
     this._makePalette(cols);
   },
 
@@ -17292,6 +17377,9 @@ function _startBgByName(name) {
 function _dlBgStart(mode) {
   console.log('[dl] _dlBgStart:', mode);
   _stopDlBgEffects();
+  // 桌面歌词模式：标记为 DL 模式（背景对象 start() 时按 _dlMode 降低流体占比）
+  if (typeof LiquidChromeBg !== 'undefined') LiquidChromeBg._dlMode = true;
+  if (typeof LiquidEtherBg !== 'undefined') LiquidEtherBg._dlMode = true;
   var dl = document.getElementById('desktopLyrics');
   if (!dl) { console.log('[dl] no desktopLyrics element'); return; }
   // ★★★ 核心修复：DL 默认有 opaque 背景（var(--surface)）会挡住 canvas，设为透明 ★★★
@@ -17359,6 +17447,9 @@ function _dlBgStart(mode) {
 }
 
 function _stopDlBgEffects() {
+  // 退出桌面歌词模式：恢复背景对象默认参数（非 DL 模式）
+  if (typeof LiquidChromeBg !== 'undefined') LiquidChromeBg._dlMode = false;
+  if (typeof LiquidEtherBg !== 'undefined') LiquidEtherBg._dlMode = false;
   _stopBgByName('LiquidEtherBg');
   _stopBgByName('LiquidChromeBg');
   _stopBgByName('WebGLFluid');
