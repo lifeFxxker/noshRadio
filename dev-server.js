@@ -12,10 +12,14 @@ const { spawn, execSync } = require('child_process');
 const PORT = 1420;
 const ROOT = __dirname;
 
-// ─── 确保 build/bundled/ 存在（Rust spawn_service 依赖） ──
+// ─── 确保 build/bundled/ 完整（Rust spawn_service 依赖） ──
+// 判断标准：netease-server.js 和 module/（NeteaseCloudMusicApi 运行时路由目录）
+// 都必须存在。只检查目录是否存在不可靠——上次打包中断会留下"半成品"。
 const BUNDLE_DIR = path.join(ROOT, 'build', 'bundled');
-if (!fs.existsSync(BUNDLE_DIR)) {
-  console.log('[dev-server] build/bundled/ 不存在，运行 build-services.js...');
+const BUNDLE_ENTRY = path.join(BUNDLE_DIR, 'netease-server.js');
+const BUNDLE_MODULE = path.join(BUNDLE_DIR, 'module');
+if (!fs.existsSync(BUNDLE_ENTRY) || !fs.existsSync(BUNDLE_MODULE)) {
+  console.log('[dev-server] build/bundled/ 不完整，运行 build-services.js...');
   try {
     execSync('node scripts/build-services.js', { cwd: ROOT, stdio: 'inherit' });
     console.log('[dev-server] build-services.js 完成');

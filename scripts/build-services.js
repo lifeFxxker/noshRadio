@@ -11,6 +11,21 @@ const ROOT = path.resolve(__dirname, '..');
 const BUNDLE_DIR = path.join(ROOT, 'build', 'bundled');
 const NETASE_PKG = path.join(ROOT, 'node_modules', 'NeteaseCloudMusicApi');
 
+/**
+ * 跨平台递归复制目录。
+ * 注意：不用 fs.cpSync —— node v24.12.0 在 Windows 上复制较大目录时会崩溃
+ * (0xC0000409, STATUS_STACK_BUFFER_OVERRUN)。改用系统原生命令。
+ */
+function copyDir(src, dst) {
+  if (!fs.existsSync(src)) return;
+  if (process.platform === 'win32') {
+    // robocopy 退出码 0-7 均为成功
+    execSync(`robocopy "${src}" "${dst}" /E /NFL /NDL /NJH /NJS`, { stdio: 'inherit' });
+  } else {
+    execSync(`cp -R "${src}/." "${dst}/"`, { stdio: 'inherit' });
+  }
+}
+
 console.log('[build-services] 开始打包后端服务...');
 
 // 清空并重建目录
@@ -38,7 +53,7 @@ for (const dir of ['module', 'util', 'plugins', 'data']) {
   const src = path.join(NETASE_PKG, dir);
   const dst = path.join(BUNDLE_DIR, dir);
   if (fs.existsSync(src)) {
-    fs.cpSync(src, dst, { recursive: true });
+    copyDir(src, dst);
     console.log(`[build-services] 复制 ${dir}/`);
   }
 }
