@@ -323,17 +323,6 @@ pub async fn update_install(
     }
 }
 
-/// 打开开发者工具（F12）
-#[tauri::command]
-pub fn open_devtools(app: tauri::AppHandle) -> Result<(), String> {
-    if let Some(window) = app.get_webview_window("main") {
-        window.open_devtools();
-        Ok(())
-    } else {
-        Err("找不到主窗口".to_string())
-    }
-}
-
 /// 诊断：检查运行环境（前端可通过此命令获取诊断信息）
 #[tauri::command]
 pub fn diagnose_backend(app: tauri::AppHandle) -> Vec<String> {
