@@ -5056,10 +5056,12 @@ wired-fab .fill-accent path {
       <div id="pluginArea">
         <div id="pluginList" style="font-size:11px;color:var(--muted);">检测中...</div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-          <button class="ai-config-btn-secondary" id="pluginSourceInstallBtn">📦 导入音源插件</button>
+          <button class="ai-config-btn-secondary" id="pluginOnlineInstallBtn">⬇️ 在线安装</button>
+          <button class="ai-config-btn-secondary" id="pluginSourceInstallBtn">📦 本地导入</button>
           <button class="ai-config-btn-secondary" id="pluginSourceRemoveBtn" style="display:none;color:var(--warn);">🗑️ 卸载</button>
           <input type="file" id="pluginZipInput" accept=".zip" style="display:none">
         </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px;">在线安装自动从 GitHub Release 拉取最新音源插件，装完重启生效</div>
       </div>
     </div>
   </div>
@@ -6614,6 +6616,52 @@ async function installSourcePlugin() {
   fileInput.click();
 }
 
+// ─── 在线安装插件（从 GitHub Release 拉取 ZIP 自动安装） ───
+// 插件独立托管在 noshRadio-source-bridge 仓库的 Release 附件，隔离主项目风险
+const PLUGIN_RELEASE_URL = 'https://github.com/lifeFxxker/noshRadio-source-bridge/releases/latest/download/source-bridge.zip';
+const PLUGIN_RELEASE_API = 'https://api.github.com/repos/lifeFxxker/noshRadio-source-bridge/releases/latest';
+
+async function downloadAndInstallPlugin() {
+  const btn = document.getElementById('pluginOnlineInstallBtn');
+  if (!btn) return;
+  if (!window.noshElectron?.plugin) { alert('插件管理仅在 Tauri/Electron 环境下可用'); return; }
+  btn.disabled = true;
+  const origText = btn.textContent;
+  btn.textContent = '⏳ 下载中...';
+  try {
+    // 先查最新版本号（用于日志/提示）
+    let version = '最新版';
+    try {
+      const vRes = await fetch(PLUGIN_RELEASE_API, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+      if (vRes.ok) {
+        const vData = await vRes.json();
+        version = vData.tag_name || version;
+      }
+    } catch (_) {}
+    btn.textContent = '⏳ 下载中...';
+    const res = await fetch(PLUGIN_RELEASE_URL, { headers: { 'Accept': 'application/octet-stream' } });
+    if (!res.ok) throw new Error(`下载失败 (HTTP ${res.status})，请检查网络后重试`);
+    const buf = await res.arrayBuffer();
+    btn.textContent = '⏳ 安装中...';
+    const result = await window.noshElectron.plugin.install('source-bridge', new Uint8Array(buf));
+    console.log('[plugin] 在线安装 IPC result:', result);
+    if (result.success) {
+      await refreshPluginUI();
+      if (confirm(`音源插件 ${version} 在线安装成功。重启应用后生效。是否立即重启？`)) {
+        window.noshElectron.windowControls.close();
+      }
+    } else if (!result.canceled) {
+      alert(`安装失败: ${result.error || '未知错误'}`);
+    }
+  } catch (e) {
+    console.error('[plugin] 在线安装异常:', e);
+    alert(`在线安装失败: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
 async function removeSourcePlugin() {
   if (!window.noshElectron?.plugin) return;
   if (!confirm('确定卸载音源插件？')) return;
@@ -6634,9 +6682,11 @@ async function removeSourcePlugin() {
 (function initPluginButtons() {
   const installBtn = document.getElementById('pluginSourceInstallBtn');
   const removeBtn = document.getElementById('pluginSourceRemoveBtn');
+  const onlineBtn = document.getElementById('pluginOnlineInstallBtn');
   if (installBtn) installBtn.addEventListener('click', installSourcePlugin);
   if (removeBtn) removeBtn.addEventListener('click', removeSourcePlugin);
-  console.log('[plugin] 按钮绑定完成，installBtn=', !!installBtn, 'removeBtn=', !!removeBtn);
+  if (onlineBtn) onlineBtn.addEventListener('click', downloadAndInstallPlugin);
+  console.log('[plugin] 按钮绑定完成，installBtn=', !!installBtn, 'removeBtn=', !!removeBtn, 'onlineBtn=', !!onlineBtn);
 })();
 
 // 初始化插件 UI

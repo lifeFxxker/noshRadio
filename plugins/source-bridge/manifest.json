@@ -1,8 +1,0 @@
-{
-  "name": "source-bridge",
-  "version": "1.0.0",
-  "title": "多音源解析",
-  "description": "多平台音源辅助解析工具，增强歌曲搜索与播放能力",
-  "entry": "bridge.js",
-  "npmDependencies": []
-}

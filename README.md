@@ -4,7 +4,7 @@
 
 基于 Tauri（Rust）构建。内置 AI 品味系统、Bilibili 视频集成和插件支持。
 
-仅个人学习使用，严禁商用或大范围传播。
+> 仅供学习交流使用，请支持正版音乐。本项目代码完全开源，音源解析功能仅用于技术研究，所有音源版权归各平台所有。
 
 <img width="450" height="260" alt="f360cce47955576aec60dd69462f3745" src="https://github.com/user-attachments/assets/54130fa1-33b7-47d7-9747-4c1919492238" />
 <img width="450" height="260" alt="image" src="https://github.com/user-attachments/assets/5762cc6a-f360-4e2c-aa32-6b8905c90b48" />
@@ -15,6 +15,15 @@
 <img width="450" height="260" alt="image" src="https://github.com/user-attachments/assets/ed62d65b-b56b-4ede-b861-6603af817f0a" />
 <img width="450" height="260" alt="image" src="https://github.com/user-attachments/assets/32d0b4b2-7268-4f43-8c78-c239cb33bb16" />
 <img width="420" height="150" alt="image" src="https://github.com/user-attachments/assets/0cb48675-d09a-42f0-a8fb-cc4a858071cb" />
+
+## 音源插件
+
+音源插件独立托管在 [noshRadio-source-bridge](https://github.com/lifeFxxker/noshRadio-source-bridge) 仓库，与主项目隔离。
+
+安装方式（二选一）：
+
+1. **在线安装（推荐）**：打开应用 → 设置 → 插件 → 点「⬇️ 在线安装」，自动从 GitHub Release 拉取最新版，重启生效
+2. **本地导入**：从 [noshRadio-source-bridge Release](https://github.com/lifeFxxker/noshRadio-source-bridge/releases) 下载 `source-bridge.zip` → 应用内「📦 本地导入」→ 选择 ZIP → 重启生效
 
 ## 功能特性
 
@@ -82,8 +91,6 @@ noshRadio/
 │   ├── src/
 │   └── tauri.conf.json
 ├── web/                     # 前端发布目录
-├── plugins/                 # 插件系统
-│   └── source-bridge/       # 音源插件桥接
 ├── build/                   # 构建脚本
 ├── lib/                     # 前端库
 ├── fonts/                   # UI 字体
