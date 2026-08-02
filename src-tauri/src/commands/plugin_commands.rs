@@ -4,6 +4,15 @@ use std::io::Cursor;
 use serde::Serialize;
 use tauri::Manager;
 
+/// 插件下载返回结构
+#[derive(Debug, Serialize)]
+pub struct PluginRemoteInstallResult {
+    pub success: bool,
+    pub canceled: bool,
+    pub error: Option<String>,
+    pub version: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct PluginInfo {
     pub name: String,
@@ -286,4 +295,82 @@ pub fn plugin_status(app: tauri::AppHandle, name: String) -> Result<serde_json::
         "version": version,
         "manifest": manifest
     }))
+}
+
+/// 远程安装插件：从 URL 下载 ZIP 并安装（绕过浏览器 CORS 限制）
+///
+/// 使用 rust 原生 HTTP 客户端（reqwest）下载，不受 WebView CORS 约束。
+/// 下载成功后将 ZIP 字节直接交给 plugin_install 的解压安装逻辑。
+#[tauri::command]
+pub async fn plugin_install_remote(
+    app: tauri::AppHandle,
+    name: String,
+    url: String,
+) -> Result<PluginRemoteInstallResult, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(120))
+        .user_agent("noshRadio/1.0.1")
+        .build()
+        .map_err(|e| format!("创建 HTTP 客户端失败: {}", e))?;
+
+    let resp = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("网络请求失败: {}", e))?;
+
+    if !resp.status().is_success() {
+        return Ok(PluginRemoteInstallResult {
+            success: false,
+            canceled: false,
+            error: Some(format!("服务器返回状态码 {}", resp.status())),
+            version: None,
+        });
+    }
+
+    let total = resp.content_length().unwrap_or(0);
+    // ZIP 通常小于 1MB，这里仅做最小合理性校验（至少 100 字节）
+    if total > 0 && total < 100 {
+        return Ok(PluginRemoteInstallResult {
+            success: false,
+            canceled: false,
+            error: Some(format!("下载的文件过小 ({} bytes)，可能不是有效的插件包", total)),
+            version: None,
+        });
+    }
+
+    let bytes = resp
+        .bytes()
+        .await
+        .map_err(|e| format!("读取下载数据失败: {}", e))?;
+
+    if bytes.is_empty() {
+        return Ok(PluginRemoteInstallResult {
+            success: false,
+            canceled: false,
+            error: Some("下载内容为空".into()),
+            version: None,
+        });
+    }
+
+    // 交给现有的解压安装逻辑
+    match plugin_install(app, name, Some(bytes.to_vec())) {
+        Ok(json) => {
+            let success = json.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
+            let canceled = json.get("canceled").and_then(|v| v.as_bool()).unwrap_or(false);
+            let error = json.get("error").and_then(|v| v.as_str()).map(|s| s.to_string());
+            Ok(PluginRemoteInstallResult {
+                success,
+                canceled,
+                error,
+                version: None,
+            })
+        }
+        Err(e) => Ok(PluginRemoteInstallResult {
+            success: false,
+            canceled: false,
+            error: Some(e),
+            version: None,
+        }),
+    }
 }

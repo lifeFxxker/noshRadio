@@ -116,13 +116,14 @@ if (window.__TAURI__) {
           } catch(e) { console.warn('[dl] exitDesktopLyrics:', e); }
         },
       },
-      devtools: {
-        open: function() { core.invoke('open_devtools').catch(function(e) { console.warn('[tauri] open_devtools:', e); }); },
-      },
       plugin: {
         status: function(name) { return core.invoke('plugin_status', { name: name }); },
         install: function(name, zipData) {
           return core.invoke('plugin_install', { name: name, zipData: zipData || null });
+        },
+        // 远程安装：rust 侧下载（绕过 WebView CORS），参数与 plugin_install 兼容
+        installRemote: function(name, url) {
+          return core.invoke('plugin_install_remote', { name: name, url: url });
         },
         remove: function(name) { return core.invoke('plugin_remove', { name: name }); },
         list: function() { return core.invoke('plugin_list'); },
@@ -6629,7 +6630,7 @@ async function downloadAndInstallPlugin() {
   const origText = btn.textContent;
   btn.textContent = '⏳ 下载中...';
   try {
-    // 先查最新版本号（用于日志/提示）
+    // 先查最新版本号（用于日志/提示；api.github.com 带 CORS 头，前端 fetch 可直连）
     let version = '最新版';
     try {
       const vRes = await fetch(PLUGIN_RELEASE_API, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
@@ -6638,12 +6639,9 @@ async function downloadAndInstallPlugin() {
         version = vData.tag_name || version;
       }
     } catch (_) {}
+    // 下载走 rust 侧（reqwest），绕过 WebView 的 CORS 限制
     btn.textContent = '⏳ 下载中...';
-    const res = await fetch(PLUGIN_RELEASE_URL, { headers: { 'Accept': 'application/octet-stream' } });
-    if (!res.ok) throw new Error(`下载失败 (HTTP ${res.status})，请检查网络后重试`);
-    const buf = await res.arrayBuffer();
-    btn.textContent = '⏳ 安装中...';
-    const result = await window.noshElectron.plugin.install('source-bridge', new Uint8Array(buf));
+    const result = await window.noshElectron.plugin.installRemote('source-bridge', PLUGIN_RELEASE_URL);
     console.log('[plugin] 在线安装 IPC result:', result);
     if (result.success) {
       await refreshPluginUI();
@@ -11618,14 +11616,7 @@ function realtimeSpeak(text) {
   window.speechSynthesis.speak(utterance);
 }
 
-// F12 打开 DevTools（仅 Electron）
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'F12' && window.noshElectron?.devtools?.open) {
-    e.preventDefault();
-    window.noshElectron.devtools.open();
-    return;
-  }
-});
+// F12 打开 DevTools 已禁用（发布版不暴露开发者工具）
 
 // 按 ~ 切换实时对话模式
 document.addEventListener('keydown', (e) => {

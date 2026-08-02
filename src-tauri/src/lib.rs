@@ -124,7 +124,6 @@ pub fn run() {
             commands::system_commands::update_check,
             commands::system_commands::update_download,
             commands::system_commands::update_install,
-            commands::system_commands::open_devtools,
             // 文件读写
             commands::fs_commands::read_data_file,
             commands::fs_commands::write_data_file,
@@ -137,6 +136,7 @@ pub fn run() {
             // 插件管理
             commands::plugin_commands::plugin_list,
             commands::plugin_commands::plugin_install,
+            commands::plugin_commands::plugin_install_remote,
             commands::plugin_commands::plugin_remove,
             commands::plugin_commands::plugin_status,
             // 诊断
