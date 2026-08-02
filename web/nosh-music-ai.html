@@ -8858,7 +8858,12 @@ let conversationHistory = [
    - 只更新明确偏好，"这首歌好听"这种不更新。推荐完不要附带 [[TASTE:]]。
 
 【歌单导入】
-用户可以通过登录账号并导入歌单来初始化音乐品味。导入后系统会自动更新品味档案并在对话历史中注入一条总结。你在对话中可以看到"常听歌手"和"主要风格"等信息，自然地使用它们来推荐歌曲。不要主动提及"你导入了歌单"这件事本身，直接基于已有的品味数据推荐即可。` }
+用户可以通过登录账号并导入歌单来初始化音乐品味。导入后系统会自动更新品味档案并在对话历史中注入一条总结。你在对话中可以看到"常听歌手"和"主要风格"等信息，自然地使用它们来推荐歌曲。不要主动提及"你导入了歌单"这件事本身，直接基于已有的品味数据推荐即可。
+
+【当前播放】
+用户消息中可能出现 [当前正在播放: 歌名 - 歌手] 标记，表示用户此刻正在听的歌。
+当用户说"hi""你在听吗""在吗"这类日常话、或提到"这首歌""这个歌手"时，自然地聊起这首歌或这个歌手（歌词、风格、背景、相关作品都行）。
+但如果用户明确要求推荐其他内容或换歌，不要被当前歌曲绑住，正常推荐即可。` }
 ];
 
 async function sendToAI(userMessage) {
@@ -8873,6 +8878,9 @@ async function sendToAI(userMessage) {
   let fullMessage = userMessage;
   if (tasteContext) fullMessage = `${tasteContext}\n\n${fullMessage}`;
   if (moodContext) fullMessage = `${moodContext}${fullMessage}`;
+  // 注入当前播放歌曲上下文，让 AI 在日常聊天时知道用户此刻在听什么
+  const nowPlaying = buildNowPlayingContext();
+  if (nowPlaying) fullMessage = `${nowPlaying}\n\n${fullMessage}`;
 
   conversationHistory.push({ role: 'user', content: fullMessage });
   logToFile('INFO', 'USER_INPUT', `用户输入: ${fullMessage}`, { conversationHistory: conversationHistory.slice() });
@@ -11153,6 +11161,18 @@ function getMoodContext() {
   return `[用户偏好参考：${moodText}]`;
 }
 
+// 当前播放歌曲上下文：让 AI 在日常聊天时知道用户此刻在听什么
+function buildNowPlayingContext() {
+  try {
+    const s = typeof currentSong !== 'undefined' ? currentSong : null;
+    if (!s || !s.name) return '';
+    const artist = s.artist || '未知歌手';
+    return `[当前正在播放: ${s.name} - ${artist}]`;
+  } catch (e) {
+    return '';
+  }
+}
+
 // ===== 事件绑定 =====
 ctrlPlay.addEventListener('click', togglePlay);
 prevBtn.addEventListener('click', playPrev);
@@ -11409,6 +11429,9 @@ async function realtimeSendToAI(userText, onDone) {
   let msg = userText;
   if (taste) msg = `${taste}\n\n${msg}`;
   if (mood) msg = `${mood}${msg}`;
+  // 注入当前播放歌曲上下文（实时对话同样需要感知当前播放）
+  const nowPlaying = buildNowPlayingContext();
+  if (nowPlaying) msg = `${nowPlaying}\n\n${msg}`;
 
   conversationHistory.push({ role: 'user', content: msg });
   logToFile('INFO', 'USER_INPUT', `[RT] ${msg}`);
